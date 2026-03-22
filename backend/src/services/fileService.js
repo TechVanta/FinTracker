@@ -45,9 +45,9 @@ export async function processFile(fileId, userId) {
 
     let rawTransactions;
     if (file.file_type === "csv") {
-      const rows = parseCsv(buffer);
-      console.log(`Parsed ${rows.length} CSV rows, columns: ${rows.length > 0 ? Object.keys(rows[0]).join(", ") : "none"}`);
-      rawTransactions = extractFromCsv(rows);
+      const parsed = parseCsv(buffer);
+      console.log(`Parsed CSV: hasHeaders=${parsed.hasHeaders}, rows=${parsed.rows.length}, fields=${parsed.fields?.join(", ") || "none (headerless)"}`);
+      rawTransactions = extractFromCsv(parsed);
     } else if (file.file_type === "pdf") {
       const text = await parsePdf(buffer);
       console.log(`Extracted ${text.length} chars from PDF`);
