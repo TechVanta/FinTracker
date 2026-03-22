@@ -24,7 +24,7 @@ settings = get_settings()
 app = FastAPI(
     title="FinTracker API",
     version="0.1.0",
-    description="Financial Analytics API",
+    description="Financial Analytics API - Upload statements, extract transactions, categorize spending",
 )
 
 app.add_middleware(
