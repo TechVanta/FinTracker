@@ -199,7 +199,7 @@ export default function AdminCategoriesPage() {
     name: cat.name,
     icon: cat.icon,
     color: cat.color,
-    keywords: cat.keywords.join(", "),
+    keywords: Array.isArray(cat.keywords) ? cat.keywords.join(", ") : "",
     sort_order: cat.sort_order,
   });
 
@@ -306,7 +306,7 @@ export default function AdminCategoriesPage() {
                       </div>
                     </td>
                     <td className="py-3 px-2 text-gray-600 max-w-[200px] truncate">
-                      {cat.keywords.length} keyword{cat.keywords.length !== 1 && "s"}
+                      {(cat.keywords?.length ?? 0)} keyword{(cat.keywords?.length ?? 0) !== 1 && "s"}
                     </td>
                     <td className="py-3 px-2 text-gray-600">{cat.sort_order}</td>
                     <td className="py-3 px-2">

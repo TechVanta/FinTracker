@@ -156,7 +156,7 @@ export default function DashboardPage() {
 
           {/* ── Charts ───────────────────────────────────────── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <MonthlySummaryChart data={summary?.monthly_trend ?? []} />
+            <MonthlySummaryChart data={Array.isArray(summary?.monthly_trend) ? summary.monthly_trend : []} />
             <CategoryBreakdown data={summary?.category_breakdown ?? {}} />
           </div>
 
@@ -164,7 +164,7 @@ export default function DashboardPage() {
           <SpendingByPeriod month={month} year={year} />
 
           {/* ── Top Merchants ────────────────────────────────── */}
-          {summary?.top_merchants && summary.top_merchants.length > 0 && (
+          {Array.isArray(summary?.top_merchants) && summary.top_merchants.length > 0 && (
             <Card title="Top Merchants">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">

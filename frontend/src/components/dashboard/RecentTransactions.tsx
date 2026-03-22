@@ -13,7 +13,7 @@ export default function RecentTransactions() {
     );
   }
 
-  const recent = transactions?.slice(0, 10) ?? [];
+  const recent = Array.isArray(transactions) ? transactions.slice(0, 10) : [];
 
   if (recent.length === 0) {
     return (

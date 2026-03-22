@@ -60,7 +60,7 @@ export default function TransactionTable({
     );
   }
 
-  if (!transactions || transactions.length === 0) {
+  if (!Array.isArray(transactions) || transactions.length === 0) {
     return (
       <Card>
         <p className="text-sm text-gray-500 text-center py-4">

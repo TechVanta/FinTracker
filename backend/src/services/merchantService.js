@@ -217,7 +217,7 @@ export async function removeMerchantMapping(merchantPattern) {
 // =============================================================================
 
 const MERCHANT_SEED_DATA = [
-  // ── GROCERIES ──────────────────────────────────────────────────────────
+  // ── GROCERIES (40+) ────────────────────────────────────────────────────
   { pattern: "loblaws", category: "Groceries" },
   { pattern: "no frills", category: "Groceries" },
   { pattern: "real canadian superstore", category: "Groceries" },
@@ -257,8 +257,17 @@ const MERCHANT_SEED_DATA = [
   { pattern: "galleria supermarket", category: "Groceries" },
   { pattern: "patel brothers", category: "Groceries" },
   { pattern: "chalo freshco", category: "Groceries" },
+  { pattern: "circle k", category: "Groceries" },
+  { pattern: "couche-tard", category: "Groceries" },
+  { pattern: "macs", category: "Groceries" },
+  { pattern: "7-eleven", category: "Groceries" },
+  { pattern: "7 eleven", category: "Groceries" },
+  { pattern: "safeway", category: "Groceries" },
+  { pattern: "thrifty foods", category: "Groceries" },
+  { pattern: "independent grocer", category: "Groceries" },
+  { pattern: "your independent", category: "Groceries" },
 
-  // ── DINING ─────────────────────────────────────────────────────────────
+  // ── DINING (50+) ───────────────────────────────────────────────────────
   { pattern: "tim hortons", category: "Dining" },
   { pattern: "tim horton", category: "Dining" },
   { pattern: "tims", category: "Dining" },
@@ -318,8 +327,13 @@ const MERCHANT_SEED_DATA = [
   { pattern: "chatime", category: "Dining" },
   { pattern: "bubble tea", category: "Dining" },
   { pattern: "cobs bread", category: "Dining" },
+  { pattern: "burger king", category: "Dining" },
+  { pattern: "taco bell", category: "Dining" },
+  { pattern: "pita pit", category: "Dining" },
+  { pattern: "opa souvlaki", category: "Dining" },
+  { pattern: "la prep", category: "Dining" },
 
-  // ── TRANSPORTATION ─────────────────────────────────────────────────────
+  // ── TRANSPORTATION (30+) ──────────────────────────────────────────────
   { pattern: "petro-canada", category: "Transportation" },
   { pattern: "petro canada", category: "Transportation" },
   { pattern: "shell", category: "Transportation" },
@@ -353,8 +367,11 @@ const MERCHANT_SEED_DATA = [
   { pattern: "active green ross", category: "Transportation" },
   { pattern: "midas", category: "Transportation" },
   { pattern: "kal tire", category: "Transportation" },
+  { pattern: "calgary transit", category: "Transportation" },
+  { pattern: "edmonton transit", category: "Transportation" },
+  { pattern: "bc ferries", category: "Transportation" },
 
-  // ── UTILITIES & TELECOM ────────────────────────────────────────────────
+  // ── UTILITIES & TELECOM (25+) ─────────────────────────────────────────
   { pattern: "rogers", category: "Utilities" },
   { pattern: "bell canada", category: "Utilities" },
   { pattern: "bell mobility", category: "Utilities" },
@@ -380,8 +397,12 @@ const MERCHANT_SEED_DATA = [
   { pattern: "enbridge", category: "Utilities" },
   { pattern: "fortisbc", category: "Utilities" },
   { pattern: "atco", category: "Utilities" },
+  { pattern: "saskpower", category: "Utilities" },
+  { pattern: "manitoba hydro", category: "Utilities" },
+  { pattern: "nova scotia power", category: "Utilities" },
+  { pattern: "nb power", category: "Utilities" },
 
-  // ── SHOPPING ───────────────────────────────────────────────────────────
+  // ── SHOPPING (50+) ────────────────────────────────────────────────────
   { pattern: "amazon.ca", category: "Shopping" },
   { pattern: "amazon", category: "Shopping" },
   { pattern: "amzn", category: "Shopping" },
@@ -432,8 +453,12 @@ const MERCHANT_SEED_DATA = [
   { pattern: "aliexpress", category: "Shopping" },
   { pattern: "shein", category: "Shopping" },
   { pattern: "temu", category: "Shopping" },
+  { pattern: "home hardware", category: "Shopping" },
+  { pattern: "lee valley", category: "Shopping" },
+  { pattern: "michael's", category: "Shopping" },
+  { pattern: "bed bath beyond", category: "Shopping" },
 
-  // ── ENTERTAINMENT ──────────────────────────────────────────────────────
+  // ── ENTERTAINMENT (25+) ───────────────────────────────────────────────
   { pattern: "netflix", category: "Entertainment" },
   { pattern: "spotify", category: "Entertainment" },
   { pattern: "disney plus", category: "Entertainment" },
@@ -459,8 +484,14 @@ const MERCHANT_SEED_DATA = [
   { pattern: "ticketmaster", category: "Entertainment" },
   { pattern: "stubhub", category: "Entertainment" },
   { pattern: "eventbrite", category: "Entertainment" },
+  { pattern: "apple music", category: "Entertainment" },
+  { pattern: "dazn", category: "Entertainment" },
+  { pattern: "audible", category: "Entertainment" },
+  { pattern: "hbo max", category: "Entertainment" },
+  { pattern: "tidal", category: "Entertainment" },
+  { pattern: "crunchyroll", category: "Entertainment" },
 
-  // ── HEALTH ─────────────────────────────────────────────────────────────
+  // ── HEALTH (15+) ──────────────────────────────────────────────────────
   { pattern: "shoppers drug mart", category: "Health" },
   { pattern: "shoppers drug", category: "Health" },
   { pattern: "pharmaprix", category: "Health" },
@@ -469,20 +500,81 @@ const MERCHANT_SEED_DATA = [
   { pattern: "jean coutu", category: "Health" },
   { pattern: "lifelabs", category: "Health" },
   { pattern: "dynacare", category: "Health" },
+  { pattern: "pharmasave", category: "Health" },
+  { pattern: "walmart pharmacy", category: "Health" },
+  { pattern: "costco pharmacy", category: "Health" },
+  { pattern: "guardian pharmacy", category: "Health" },
+  { pattern: "express scripts", category: "Health" },
+  { pattern: "green shield", category: "Health" },
+  { pattern: "medeo", category: "Health" },
 
-  // ── PERSONAL CARE ──────────────────────────────────────────────────────
+  // ── PERSONAL CARE (12+) ───────────────────────────────────────────────
   { pattern: "sephora", category: "Personal Care" },
   { pattern: "nail salon", category: "Personal Care" },
   { pattern: "great clips", category: "Personal Care" },
   { pattern: "first choice haircutters", category: "Personal Care" },
   { pattern: "supercuts", category: "Personal Care" },
+  { pattern: "chatters", category: "Personal Care" },
+  { pattern: "mastercuts", category: "Personal Care" },
+  { pattern: "trade secrets", category: "Personal Care" },
+  { pattern: "tommy gun", category: "Personal Care" },
+  { pattern: "spa nordik", category: "Personal Care" },
+  { pattern: "scandinave spa", category: "Personal Care" },
+  { pattern: "bare beauty", category: "Personal Care" },
 
-  // ── FINANCIAL ──────────────────────────────────────────────────────────
-  { pattern: "wealthsimple", category: "Financial" },
-  { pattern: "questrade", category: "Financial" },
-  { pattern: "interactive brokers", category: "Financial" },
+  // ── HOUSING (12+) ─────────────────────────────────────────────────────
+  { pattern: "capreit", category: "Housing" },
+  { pattern: "boardwalk rental", category: "Housing" },
+  { pattern: "minto apartments", category: "Housing" },
+  { pattern: "mainstreet equity", category: "Housing" },
+  { pattern: "killam apartment", category: "Housing" },
+  { pattern: "greenwin", category: "Housing" },
+  { pattern: "skyline living", category: "Housing" },
+  { pattern: "realstar management", category: "Housing" },
+  { pattern: "property tax", category: "Housing" },
+  { pattern: "condo fee", category: "Housing" },
+  { pattern: "strata", category: "Housing" },
+  { pattern: "mortgage payment", category: "Housing" },
 
-  // ── REMITTANCE ─────────────────────────────────────────────────────────
+  // ── FINANCIAL (15+) ───────────────────────────────────────────────────
+  { pattern: "td bank", category: "Financial" },
+  { pattern: "td canada trust", category: "Financial" },
+  { pattern: "rbc royal bank", category: "Financial" },
+  { pattern: "rbc", category: "Financial" },
+  { pattern: "cibc", category: "Financial" },
+  { pattern: "bmo", category: "Financial" },
+  { pattern: "scotiabank", category: "Financial" },
+  { pattern: "desjardins", category: "Financial" },
+  { pattern: "tangerine", category: "Financial" },
+  { pattern: "simplii", category: "Financial" },
+  { pattern: "eq bank", category: "Financial" },
+  { pattern: "national bank", category: "Financial" },
+  { pattern: "hsbc canada", category: "Financial" },
+  { pattern: "bank fee", category: "Financial" },
+  { pattern: "monthly fee", category: "Financial" },
+  { pattern: "interest charge", category: "Financial" },
+  { pattern: "overdraft", category: "Financial" },
+  { pattern: "nsf fee", category: "Financial" },
+
+  // ── INVESTMENT (15+) ──────────────────────────────────────────────────
+  { pattern: "wealthsimple", category: "Investment" },
+  { pattern: "wealthsimple trade", category: "Investment" },
+  { pattern: "questrade", category: "Investment" },
+  { pattern: "interactive brokers", category: "Investment" },
+  { pattern: "td direct investing", category: "Investment" },
+  { pattern: "rbc direct investing", category: "Investment" },
+  { pattern: "bmo investorline", category: "Investment" },
+  { pattern: "cibc investor", category: "Investment" },
+  { pattern: "scotia itrade", category: "Investment" },
+  { pattern: "national bank direct", category: "Investment" },
+  { pattern: "coinbase", category: "Investment" },
+  { pattern: "newton crypto", category: "Investment" },
+  { pattern: "shakepay", category: "Investment" },
+  { pattern: "bitbuy", category: "Investment" },
+  { pattern: "crypto.com", category: "Investment" },
+  { pattern: "binance", category: "Investment" },
+
+  // ── REMITTANCE (10+) ──────────────────────────────────────────────────
   { pattern: "wise", category: "Remittance" },
   { pattern: "transferwise", category: "Remittance" },
   { pattern: "western union", category: "Remittance" },
@@ -492,8 +584,11 @@ const MERCHANT_SEED_DATA = [
   { pattern: "moneygram", category: "Remittance" },
   { pattern: "ria money", category: "Remittance" },
   { pattern: "pangea", category: "Remittance" },
+  { pattern: "instarem", category: "Remittance" },
+  { pattern: "xe money", category: "Remittance" },
+  { pattern: "ofx", category: "Remittance" },
 
-  // ── ALCOHOL & CANNABIS ─────────────────────────────────────────────────
+  // ── ALCOHOL & CANNABIS (12+) ──────────────────────────────────────────
   { pattern: "lcbo", category: "Alcohol & Cannabis" },
   { pattern: "saq", category: "Alcohol & Cannabis" },
   { pattern: "bc liquor", category: "Alcohol & Cannabis" },
@@ -501,11 +596,20 @@ const MERCHANT_SEED_DATA = [
   { pattern: "wine rack", category: "Alcohol & Cannabis" },
   { pattern: "ocs", category: "Alcohol & Cannabis" },
   { pattern: "sqdc", category: "Alcohol & Cannabis" },
+  { pattern: "alberta gaming", category: "Alcohol & Cannabis" },
+  { pattern: "co-op liquor", category: "Alcohol & Cannabis" },
+  { pattern: "liquor depot", category: "Alcohol & Cannabis" },
+  { pattern: "liquor barn", category: "Alcohol & Cannabis" },
+  { pattern: "spirit leaf", category: "Alcohol & Cannabis" },
+  { pattern: "tokyo smoke", category: "Alcohol & Cannabis" },
+  { pattern: "nova cannabis", category: "Alcohol & Cannabis" },
+  { pattern: "fire & flower", category: "Alcohol & Cannabis" },
 
-  // ── SUBSCRIPTIONS ──────────────────────────────────────────────────────
+  // ── SUBSCRIPTIONS (15+) ───────────────────────────────────────────────
   { pattern: "adobe", category: "Subscriptions" },
   { pattern: "microsoft 365", category: "Subscriptions" },
   { pattern: "google storage", category: "Subscriptions" },
+  { pattern: "google one", category: "Subscriptions" },
   { pattern: "icloud", category: "Subscriptions" },
   { pattern: "dropbox", category: "Subscriptions" },
   { pattern: "notion", category: "Subscriptions" },
@@ -513,8 +617,14 @@ const MERCHANT_SEED_DATA = [
   { pattern: "chatgpt", category: "Subscriptions" },
   { pattern: "openai", category: "Subscriptions" },
   { pattern: "github", category: "Subscriptions" },
+  { pattern: "figma", category: "Subscriptions" },
+  { pattern: "slack", category: "Subscriptions" },
+  { pattern: "zoom", category: "Subscriptions" },
+  { pattern: "1password", category: "Subscriptions" },
+  { pattern: "nordvpn", category: "Subscriptions" },
+  { pattern: "expressvpn", category: "Subscriptions" },
 
-  // ── TRAVEL ─────────────────────────────────────────────────────────────
+  // ── TRAVEL (15+) ──────────────────────────────────────────────────────
   { pattern: "air canada", category: "Travel" },
   { pattern: "westjet", category: "Travel" },
   { pattern: "porter airlines", category: "Travel" },
@@ -529,8 +639,15 @@ const MERCHANT_SEED_DATA = [
   { pattern: "hertz", category: "Travel" },
   { pattern: "avis", category: "Travel" },
   { pattern: "budget rent", category: "Travel" },
+  { pattern: "best western", category: "Travel" },
+  { pattern: "holiday inn", category: "Travel" },
+  { pattern: "hyatt", category: "Travel" },
+  { pattern: "trivago", category: "Travel" },
+  { pattern: "kayak", category: "Travel" },
+  { pattern: "hopper", category: "Travel" },
+  { pattern: "vrbo", category: "Travel" },
 
-  // ── INSURANCE ──────────────────────────────────────────────────────────
+  // ── INSURANCE (12+) ───────────────────────────────────────────────────
   { pattern: "manulife", category: "Insurance" },
   { pattern: "sun life", category: "Insurance" },
   { pattern: "great-west life", category: "Insurance" },
@@ -539,29 +656,67 @@ const MERCHANT_SEED_DATA = [
   { pattern: "aviva", category: "Insurance" },
   { pattern: "belair", category: "Insurance" },
   { pattern: "cooperators", category: "Insurance" },
+  { pattern: "desjardins insurance", category: "Insurance" },
+  { pattern: "td insurance", category: "Insurance" },
+  { pattern: "sonnet", category: "Insurance" },
+  { pattern: "wawanesa", category: "Insurance" },
+  { pattern: "industrial alliance", category: "Insurance" },
+  { pattern: "rbc insurance", category: "Insurance" },
 
-  // ── CONVENIENCE STORES ─────────────────────────────────────────────────
-  { pattern: "circle k", category: "Groceries" },
-  { pattern: "couche-tard", category: "Groceries" },
-  { pattern: "macs", category: "Groceries" },
-  { pattern: "7-eleven", category: "Groceries" },
-  { pattern: "7 eleven", category: "Groceries" },
-
-  // ── PETS ───────────────────────────────────────────────────────────────
+  // ── PETS (10+) ────────────────────────────────────────────────────────
   { pattern: "petsmart", category: "Pets" },
   { pattern: "pet valu", category: "Pets" },
   { pattern: "global pet", category: "Pets" },
   { pattern: "ren's pets", category: "Pets" },
+  { pattern: "petland", category: "Pets" },
+  { pattern: "homes alive pets", category: "Pets" },
+  { pattern: "bosley's", category: "Pets" },
+  { pattern: "mudbay", category: "Pets" },
+  { pattern: "tisol", category: "Pets" },
+  { pattern: "trupanion", category: "Pets" },
+  { pattern: "petsecure", category: "Pets" },
+  { pattern: "vca animal hospital", category: "Pets" },
 
-  // ── CHILDREN & FAMILY ──────────────────────────────────────────────────
+  // ── CHILDREN & FAMILY (10+) ───────────────────────────────────────────
   { pattern: "toys r us", category: "Children & Family" },
   { pattern: "mastermind toys", category: "Children & Family" },
+  { pattern: "scholar's choice", category: "Children & Family" },
+  { pattern: "once upon a child", category: "Children & Family" },
+  { pattern: "buy buy baby", category: "Children & Family" },
+  { pattern: "snuggle bugz", category: "Children & Family" },
+  { pattern: "west coast kids", category: "Children & Family" },
+  { pattern: "kumon", category: "Children & Family" },
+  { pattern: "sylvan learning", category: "Children & Family" },
+  { pattern: "mathnasium", category: "Children & Family" },
+  { pattern: "little kickers", category: "Children & Family" },
 
-  // ── EDUCATION ──────────────────────────────────────────────────────────
+  // ── EDUCATION (12+) ──────────────────────────────────────────────────
   { pattern: "udemy", category: "Education" },
   { pattern: "coursera", category: "Education" },
   { pattern: "linkedin learning", category: "Education" },
   { pattern: "skillshare", category: "Education" },
+  { pattern: "masterclass", category: "Education" },
+  { pattern: "brilliant.org", category: "Education" },
+  { pattern: "pluralsight", category: "Education" },
+  { pattern: "codecademy", category: "Education" },
+  { pattern: "khan academy", category: "Education" },
+  { pattern: "duolingo", category: "Education" },
+  { pattern: "babbel", category: "Education" },
+  { pattern: "university of", category: "Education" },
+
+  // ── GIFTS & DONATIONS (12+) ──────────────────────────────────────────
+  { pattern: "united way", category: "Gifts & Donations" },
+  { pattern: "red cross", category: "Gifts & Donations" },
+  { pattern: "salvation army", category: "Gifts & Donations" },
+  { pattern: "world vision", category: "Gifts & Donations" },
+  { pattern: "sick kids foundation", category: "Gifts & Donations" },
+  { pattern: "cancer society", category: "Gifts & Donations" },
+  { pattern: "heart and stroke", category: "Gifts & Donations" },
+  { pattern: "gofundme", category: "Gifts & Donations" },
+  { pattern: "food bank", category: "Gifts & Donations" },
+  { pattern: "habitat for humanity", category: "Gifts & Donations" },
+  { pattern: "amnesty international", category: "Gifts & Donations" },
+  { pattern: "wwf canada", category: "Gifts & Donations" },
 ];
 
 /**

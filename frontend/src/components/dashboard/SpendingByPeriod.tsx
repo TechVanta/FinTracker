@@ -84,7 +84,7 @@ export default function SpendingByPeriod({ month, year }: SpendingByPeriodProps)
         <div className="flex justify-center py-8">
           <Spinner />
         </div>
-      ) : !data || data.buckets.length === 0 ? (
+      ) : !data || !Array.isArray(data.buckets) || data.buckets.length === 0 ? (
         <p className="text-sm text-gray-500 text-center py-8">
           No spending data for this period
         </p>
@@ -136,7 +136,7 @@ export default function SpendingByPeriod({ month, year }: SpendingByPeriodProps)
               Category Totals — {PERIOD_OPTIONS.find((p) => p.value === period)?.label}
             </h4>
             <div className="space-y-2">
-              {Object.entries(data.category_totals)
+              {Object.entries(data.category_totals ?? {})
                 .slice(0, 8) // Show top 8 categories
                 .map(([category, amount], idx) => {
                   const pct = data.total > 0 ? (amount / data.total) * 100 : 0;
