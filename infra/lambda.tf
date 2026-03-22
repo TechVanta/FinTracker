@@ -18,7 +18,6 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      AWS_REGION                     = var.aws_region
       DYNAMODB_USERS_TABLE           = aws_dynamodb_table.users.name
       DYNAMODB_TRANSACTIONS_TABLE    = aws_dynamodb_table.transactions.name
       DYNAMODB_FILES_TABLE           = aws_dynamodb_table.files.name
