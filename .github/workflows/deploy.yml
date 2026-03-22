@@ -1,0 +1,186 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  # ──────────────────────────────────────────────────
+  # Job 1: Terraform — create/update all AWS resources
+  # ──────────────────────────────────────────────────
+  terraform:
+    name: Infrastructure (Terraform)
+    runs-on: ubuntu-latest
+    outputs:
+      lambda_function_name: ${{ steps.outputs.outputs.lambda_function_name }}
+      frontend_bucket: ${{ steps.outputs.outputs.frontend_bucket }}
+      cloudfront_distribution_id: ${{ steps.outputs.outputs.cloudfront_distribution_id }}
+      api_gateway_url: ${{ steps.outputs.outputs.api_gateway_url }}
+      cloudfront_domain: ${{ steps.outputs.outputs.cloudfront_domain }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Create placeholder Lambda zip
+        run: |
+          cd backend
+          mkdir -p package
+          echo "def handler(event, context): return {'statusCode': 200, 'body': 'placeholder'}" > package/lambda_handler.py
+          cd package && zip -r ../lambda.zip . && cd ..
+          rm -rf package
+
+      - name: Terraform Init
+        run: |
+          cd infra
+          terraform init -input=false
+
+      - name: Terraform Plan
+        run: |
+          cd infra
+          terraform plan -input=false -out=tfplan
+
+      - name: Terraform Apply
+        run: |
+          cd infra
+          terraform apply -input=false -auto-approve tfplan
+
+      - name: Get Terraform outputs
+        id: outputs
+        run: |
+          cd infra
+          echo "lambda_function_name=$(terraform output -raw lambda_function_name)" >> $GITHUB_OUTPUT
+          echo "frontend_bucket=$(terraform output -raw frontend_bucket)" >> $GITHUB_OUTPUT
+          echo "cloudfront_distribution_id=$(terraform output -raw cloudfront_distribution_id)" >> $GITHUB_OUTPUT
+          echo "api_gateway_url=$(terraform output -raw api_gateway_url)" >> $GITHUB_OUTPUT
+          echo "cloudfront_domain=$(terraform output -raw cloudfront_domain)" >> $GITHUB_OUTPUT
+
+  # ──────────────────────────────────────────────────
+  # Job 2: Deploy Backend — package and update Lambda
+  # ──────────────────────────────────────────────────
+  deploy-backend:
+    name: Deploy Backend
+    needs: terraform
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Install dependencies into package
+        run: |
+          cd backend
+          pip install -r requirements.txt -t package/
+          cp -r app/ package/app/
+          cp lambda_handler.py package/
+
+      - name: Create deployment package
+        run: |
+          cd backend/package
+          zip -r ../lambda.zip .
+
+      - name: Deploy to Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ needs.terraform.outputs.lambda_function_name }} \
+            --zip-file fileb://backend/lambda.zip
+
+      - name: Wait for function update
+        run: |
+          aws lambda wait function-updated \
+            --function-name ${{ needs.terraform.outputs.lambda_function_name }}
+
+      - name: Update LLM environment variables
+        run: |
+          FUNCTION_NAME="${{ needs.terraform.outputs.lambda_function_name }}"
+
+          # Get existing env vars (preserves JWT_SECRET and Terraform-managed vars)
+          EXISTING=$(aws lambda get-function-configuration \
+            --function-name "$FUNCTION_NAME" \
+            --query 'Environment.Variables' --output json)
+
+          # Merge in LLM secrets
+          UPDATED=$(echo "$EXISTING" | python3 -c "
+          import sys, json
+          env = json.load(sys.stdin)
+          env['LLM_API_KEY'] = '${{ secrets.LLM_API_KEY }}'
+          env['LLM_PROVIDER'] = '${{ secrets.LLM_PROVIDER }}'
+          print(json.dumps({'Variables': env}))
+          ")
+
+          aws lambda update-function-configuration \
+            --function-name "$FUNCTION_NAME" \
+            --environment "$UPDATED"
+
+  # ──────────────────────────────────────────────────
+  # Job 3: Deploy Frontend — build and sync to S3
+  # ──────────────────────────────────────────────────
+  deploy-frontend:
+    name: Deploy Frontend
+    needs: terraform
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Deploy to S3
+        run: |
+          aws s3 sync frontend/dist/ s3://${{ needs.terraform.outputs.frontend_bucket }}/ \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "index.html"
+
+          aws s3 cp frontend/dist/index.html s3://${{ needs.terraform.outputs.frontend_bucket }}/index.html \
+            --cache-control "public, max-age=0, must-revalidate"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ needs.terraform.outputs.cloudfront_distribution_id }} \
+            --paths "/*"
