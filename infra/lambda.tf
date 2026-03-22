@@ -21,9 +21,12 @@ resource "aws_lambda_function" "api" {
       DYNAMODB_USERS_TABLE           = aws_dynamodb_table.users.name
       DYNAMODB_TRANSACTIONS_TABLE    = aws_dynamodb_table.transactions.name
       DYNAMODB_FILES_TABLE           = aws_dynamodb_table.files.name
+      DYNAMODB_CATEGORIES_TABLE      = aws_dynamodb_table.categories.name
+      DYNAMODB_MERCHANTS_TABLE       = aws_dynamodb_table.merchant_mappings.name
       S3_UPLOADS_BUCKET              = aws_s3_bucket.uploads.id
       JWT_SECRET                     = random_password.jwt_secret.result
       CORS_ORIGINS                   = "*"
+      ADMIN_USER_ID                  = var.admin_user_id
     }
   }
 

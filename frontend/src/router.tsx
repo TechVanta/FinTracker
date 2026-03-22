@@ -5,6 +5,8 @@ import SignupPage from "@/pages/SignupPage";
 import DashboardPage from "@/pages/DashboardPage";
 import UploadPage from "@/pages/UploadPage";
 import TransactionsPage from "@/pages/TransactionsPage";
+import AdminCategoriesPage from "@/pages/AdminCategoriesPage";
+import AdminMerchantsPage from "@/pages/AdminMerchantsPage";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
@@ -17,6 +19,8 @@ export const router = createBrowserRouter([
       { path: "dashboard", element: <DashboardPage /> },
       { path: "upload", element: <UploadPage /> },
       { path: "transactions", element: <TransactionsPage /> },
+      { path: "admin/categories", element: <AdminCategoriesPage /> },
+      { path: "admin/merchants", element: <AdminMerchantsPage /> },
     ],
   },
 ]);

@@ -8,14 +8,23 @@ import {
 } from "recharts";
 import Card from "@/components/ui/Card";
 
+/**
+ * Extended palette so dynamically-generated categories always get a distinct
+ * colour even when there are more than seven.
+ */
 const COLORS = [
-  "#3b82f6",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#6b7280",
+  "#3b82f6", // blue
+  "#10b981", // emerald
+  "#f59e0b", // amber
+  "#ef4444", // red
+  "#8b5cf6", // violet
+  "#ec4899", // pink
+  "#6b7280", // gray
+  "#14b8a6", // teal
+  "#f97316", // orange
+  "#a855f7", // purple
+  "#06b6d4", // cyan
+  "#84cc16", // lime
 ];
 
 interface CategoryBreakdownProps {
@@ -23,10 +32,10 @@ interface CategoryBreakdownProps {
 }
 
 export default function CategoryBreakdown({ data }: CategoryBreakdownProps) {
-  const chartData = Object.entries(data).map(([name, value]) => ({
-    name,
-    value,
-  }));
+  // Sort categories by value descending so the largest slice renders first
+  const chartData = Object.entries(data)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
 
   if (chartData.length === 0) {
     return (
@@ -59,8 +68,15 @@ export default function CategoryBreakdown({ data }: CategoryBreakdownProps) {
                 />
               ))}
             </Pie>
-            <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
-            <Legend />
+            <Tooltip
+              formatter={(value: number) => [`$${value.toFixed(2)}`, "Spent"]}
+            />
+            <Legend
+              formatter={(value: string) =>
+                // Truncate very long category names in the legend
+                value.length > 18 ? `${value.slice(0, 16)}...` : value
+              }
+            />
           </PieChart>
         </ResponsiveContainer>
       </div>

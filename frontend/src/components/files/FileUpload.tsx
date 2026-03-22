@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { requestUploadUrl, uploadFileToS3, processFile } from "@/api/files";
@@ -7,11 +7,33 @@ import Card from "@/components/ui/Card";
 
 type UploadStage = "idle" | "uploading" | "processing" | "done" | "error";
 
+/** MIME types accepted for upload (PDF, CSV, and common image formats) */
+const VALID_TYPES = [
+  "application/pdf",
+  "text/csv",
+  "image/jpeg",
+  "image/png",
+  "image/heic",
+  "image/webp",
+];
+
+/** File extensions shown in the file picker */
+const ACCEPT_STRING = ".pdf,.csv,.jpg,.jpeg,.png,.heic,.webp";
+
+/**
+ * FileUpload — Drag-and-drop upload zone for statements, receipts, and screenshots.
+ *
+ * Supports PDF, CSV, and image files (JPG, PNG, HEIC, WebP).
+ * Includes a dedicated camera button for mobile devices to capture receipts.
+ */
 export default function FileUpload() {
   const [stage, setStage] = useState<UploadStage>("idle");
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState("");
   const queryClient = useQueryClient();
+
+  // Ref for the hidden camera input (mobile capture)
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -46,11 +68,27 @@ export default function FileUpload() {
     },
   });
 
+  /** Validate file type and kick off the upload pipeline */
   const handleFile = useCallback(
     (file: File) => {
-      const validTypes = ["application/pdf", "text/csv"];
-      if (!validTypes.includes(file.type)) {
-        setError("Please upload a PDF or CSV file");
+      // HEIC files may not have a recognized MIME type on some browsers,
+      // so also check the file extension as a fallback.
+      const extension = file.name.split(".").pop()?.toLowerCase();
+      const isValidType = VALID_TYPES.includes(file.type);
+      const isValidExtension = [
+        "pdf",
+        "csv",
+        "jpg",
+        "jpeg",
+        "png",
+        "heic",
+        "webp",
+      ].includes(extension || "");
+
+      if (!isValidType && !isValidExtension) {
+        setError(
+          "Please upload a PDF, CSV, or image file (JPG, PNG, HEIC, WebP)"
+        );
         setStage("error");
         return;
       }
@@ -72,6 +110,8 @@ export default function FileUpload() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
+    // Reset the input so the same file can be re-selected
+    e.target.value = "";
   };
 
   return (
@@ -91,6 +131,7 @@ export default function FileUpload() {
       >
         {stage === "idle" && (
           <>
+            {/* Cloud upload icon */}
             <svg
               className="mx-auto h-12 w-12 text-gray-400"
               fill="none"
@@ -105,20 +146,64 @@ export default function FileUpload() {
               />
             </svg>
             <p className="mt-2 text-sm text-gray-600">
-              Drag and drop your bank statement here, or
+              Drag and drop your statements, receipts, or screenshots here
             </p>
-            <label className="mt-2 inline-block">
+
+            <div className="mt-3 flex items-center justify-center gap-2">
+              {/* Browse files button */}
+              <label>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept={ACCEPT_STRING}
+                  onChange={handleInputChange}
+                />
+                <Button variant="secondary" type="button" onClick={() => {}}>
+                  Browse Files
+                </Button>
+              </label>
+
+              {/* Camera capture button (primarily for mobile) */}
               <input
+                ref={cameraInputRef}
                 type="file"
                 className="hidden"
-                accept=".pdf,.csv"
+                accept="image/*"
+                capture="environment"
                 onChange={handleInputChange}
               />
-              <Button variant="secondary" type="button" onClick={() => {}}>
-                Browse Files
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                title="Take a photo of a receipt"
+              >
+                {/* Camera icon */}
+                <svg
+                  className="h-4 w-4 mr-1.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"
+                  />
+                </svg>
+                Camera
               </Button>
-            </label>
-            <p className="mt-1 text-xs text-gray-500">PDF or CSV files only</p>
+            </div>
+
+            <p className="mt-2 text-xs text-gray-500">
+              PDF, CSV, JPG, PNG, HEIC, or WebP
+            </p>
           </>
         )}
 

@@ -15,3 +15,11 @@ variable "project_name" {
   type        = string
   default     = "fintracker"
 }
+
+# The user_id of the admin user who can manage categories and merchant mappings.
+# Set this after creating your first account — check DynamoDB users table for the value.
+variable "admin_user_id" {
+  description = "User ID of the admin user (from fintracker-users table)"
+  type        = string
+  default     = ""
+}

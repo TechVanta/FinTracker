@@ -27,3 +27,13 @@ output "lambda_function_name" {
   description = "Lambda function name"
   value       = aws_lambda_function.api.function_name
 }
+
+output "categories_table" {
+  description = "Categories DynamoDB table name"
+  value       = aws_dynamodb_table.categories.name
+}
+
+output "merchant_mappings_table" {
+  description = "Merchant mappings DynamoDB table name"
+  value       = aws_dynamodb_table.merchant_mappings.name
+}

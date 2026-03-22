@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -13,10 +14,20 @@ interface MonthlySummaryChartProps {
   data: Array<{ date: string; amount: number }>;
 }
 
+/**
+ * Bar chart showing daily spending for the selected month.
+ * Data is sorted by date to ensure chronological bar ordering.
+ */
 export default function MonthlySummaryChart({
   data,
 }: MonthlySummaryChartProps) {
-  if (!data || data.length === 0) {
+  // Ensure bars render in chronological order regardless of API ordering
+  const sorted = useMemo(
+    () => [...data].sort((a, b) => a.date.localeCompare(b.date)),
+    [data]
+  );
+
+  if (!sorted || sorted.length === 0) {
     return (
       <Card title="Daily Spending">
         <p className="text-sm text-gray-500 text-center py-8">
@@ -30,7 +41,7 @@ export default function MonthlySummaryChart({
     <Card title="Daily Spending">
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data}>
+          <BarChart data={sorted}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis
               dataKey="date"

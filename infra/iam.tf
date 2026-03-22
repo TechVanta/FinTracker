@@ -48,7 +48,11 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
           aws_dynamodb_table.transactions.arn,
           "${aws_dynamodb_table.transactions.arn}/index/*",
           aws_dynamodb_table.files.arn,
-          "${aws_dynamodb_table.files.arn}/index/*"
+          "${aws_dynamodb_table.files.arn}/index/*",
+          aws_dynamodb_table.categories.arn,
+          "${aws_dynamodb_table.categories.arn}/index/*",
+          aws_dynamodb_table.merchant_mappings.arn,
+          "${aws_dynamodb_table.merchant_mappings.arn}/index/*"
         ]
       }
     ]

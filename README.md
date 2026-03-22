@@ -1,83 +1,79 @@
 # FinTracker
 
-Financial analytics web application for uploading bank/credit card statements, extracting transactions, auto-categorizing spending via LLM, and visualizing financial data on an interactive dashboard.
+AI-powered personal finance platform for Canadians. Upload any financial document — bank statements, credit card PDFs, receipts, screenshots — and instantly see where your money goes.
+
+## The Problem
+
+Most Canadians don't track their spending. Bank apps show transactions but not insights. Budgeting apps like YNAB require tedious manual entry or scary bank logins. There's no simple way to answer: *"Where did my money go this month?"*
+
+## The Solution
+
+Upload anything. Get answers.
+
+- **PDF/CSV statements** — Auto-extracted and categorized
+- **Receipt photos** — AI reads the receipt, you confirm
+- **Manual entry** — Quick-add for cash expenses
+- **Canadian-optimized** — Knows Loblaws, Tim Hortons, Petro-Canada, Rogers, and 500+ Canadian merchants
+
+No bank login required. No subscription needed to start.
+
+## Target Users
+
+- **Young professionals** trying to understand their spending habits
+- **Students** on tight budgets who need visibility into every dollar
+- **New immigrant families** tracking expenses across categories including remittance
+
+## Key Features (MVP)
+
+- Upload credit card/bank statements (PDF, CSV) or receipt photos
+- AI-powered transaction extraction and categorization
+- Dynamic category system with 20+ Canadian-optimized categories
+- Spending dashboard with monthly trends and category breakdowns
+- Month-over-month comparisons and spending insights
+- Manual transaction entry for cash expenses
+- Admin module for managing categories and merchant mappings
+- Auto-learning: category corrections improve future accuracy
+
+## How It Works
+
+```
+1. Upload    →  Drop a PDF, CSV, or snap a receipt photo
+2. Extract   →  AI pulls out date, merchant, and amount
+3. Categorize → 3-layer system: merchant DB → keyword rules → LLM
+4. Insights  →  See where your money goes, month over month
+```
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS, Zustand, React Query, Recharts |
-| **Backend** | Python 3.11, FastAPI, Pydantic v2, Mangum |
-| **Database** | AWS DynamoDB (3 tables) |
-| **Storage** | AWS S3 (uploads + frontend hosting) |
-| **Compute** | AWS Lambda (single function) |
-| **CDN** | AWS CloudFront |
-| **API** | AWS API Gateway (HTTP API) |
-| **IaC** | Terraform (S3 backend with native locking) |
-| **CI/CD** | GitHub Actions (OIDC auth) |
-| **LLM** | Provider-agnostic (Groq, OpenAI, etc.) |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS, Zustand, React Query, Recharts |
+| Backend | Node.js 20, Express, serverless-http, esbuild |
+| Database | AWS DynamoDB (5 tables, pay-per-request) |
+| Storage | AWS S3 (file uploads + frontend hosting) |
+| Compute | AWS Lambda (single function, ~5MB bundle) |
+| CDN | AWS CloudFront (frontend + API proxy) |
+| API | AWS API Gateway HTTP v2 |
+| AI/LLM | Groq (free tier) — Llama 3.1 8B + Llama 3.2 Vision |
+| IaC | Terraform (S3 backend) |
+| CI/CD | GitHub Actions (OIDC auth, push-to-main deploy) |
 
 ## Architecture
 
 ```
-                         ┌─────────────────────────────────────────────┐
-                         │              CloudFront CDN                 │
-                         │         (single entry point)                │
-                         │                                             │
-                         │  /*        → S3 Frontend (React SPA)        │
-                         │  /api/*    → API Gateway → Lambda           │
-                         └──────────┬────────────────┬─────────────────┘
-                                    │                │
-                    ┌───────────────▼──┐    ┌───────▼──────────────┐
-                    │  S3 Frontend     │    │  API Gateway (HTTP)  │
-                    │  (static files)  │    └───────┬──────────────┘
-                    └──────────────────┘            │
-                                           ┌───────▼──────────────┐
-                                           │  AWS Lambda          │
-                                           │  (FastAPI + Mangum)  │
-                                           └──┬─────┬─────┬──────┘
-                                              │     │     │
-                              ┌───────────────┘     │     └──────────────┐
-                              ▼                     ▼                    ▼
-                        ┌──────────┐         ┌──────────┐         ┌──────────┐
-                        │ DynamoDB │         │    S3    │         │   LLM    │
-                        │ 3 tables │         │ uploads  │         │  (Groq)  │
-                        └──────────┘         └──────────┘         └──────────┘
-```
-
-### Backend Clean Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  API Layer          (app/api/)           HTTP routes, auth  │
-├─────────────────────────────────────────────────────────────┤
-│  Service Layer      (app/services/)      Business logic     │
-├─────────────────────────────────────────────────────────────┤
-│  Domain Layer       (app/domain/)        Entities, enums    │
-├─────────────────────────────────────────────────────────────┤
-│  Infrastructure     (app/infrastructure/) DynamoDB, S3, LLM │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### File Processing Pipeline
-
-```
-User uploads file
-       │
-       ▼
-POST /api/files/upload → returns presigned S3 URL + file_id
-       │
-       ▼
-Frontend uploads directly to S3 (bypasses Lambda 6MB limit)
-       │
-       ▼
-POST /api/files/{id}/process → triggers pipeline:
-       │
-       ├── Download from S3
-       ├── Parse (PDF via pdfplumber / CSV via csv.DictReader)
-       ├── Extract transactions (regex + column detection)
-       ├── Categorize via LLM (with keyword-based fallback)
-       └── Store in DynamoDB
+┌──────────────────────────────────────────────────────────┐
+│                    CloudFront CDN                        │
+│                                                          │
+│   /*     → S3 (React SPA)                                │
+│   /api/* → API Gateway → Lambda (Node.js + Express)      │
+└──────────────────────────┬───────────────────────────────┘
+                           │
+              ┌────────────┼────────────┐
+              │            │            │
+        ┌─────▼────┐ ┌────▼─────┐ ┌───▼──────┐
+        │ DynamoDB │ │    S3    │ │ Groq API │
+        │ 5 tables │ │ uploads  │ │ (free)   │
+        └──────────┘ └──────────┘ └──────────┘
 ```
 
 ## Project Structure
@@ -85,222 +81,167 @@ POST /api/files/{id}/process → triggers pipeline:
 ```
 FinTracker/
 ├── backend/
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── deps.py                    # Dependency injection
-│   │   │   └── routes/
-│   │   │       ├── auth.py                # POST /auth/signup, /auth/login
-│   │   │       ├── files.py               # POST /files/upload, /files/{id}/process
-│   │   │       ├── transactions.py        # GET /transactions, PATCH /transactions/{id}
-│   │   │       └── dashboard.py           # GET /dashboard/summary
-│   │   ├── domain/
-│   │   │   ├── entities.py                # Pydantic models (User, Transaction, FileRecord)
-│   │   │   ├── enums.py                   # TransactionCategory, FileStatus, LLMProviderType
-│   │   │   └── exceptions.py              # Domain errors
-│   │   ├── services/
-│   │   │   ├── auth_service.py            # JWT + bcrypt auth
-│   │   │   ├── parser_service.py          # PDF/CSV parsing
-│   │   │   ├── extraction_service.py      # Transaction extraction
-│   │   │   ├── categorization_service.py  # LLM + rule-based fallback
-│   │   │   ├── file_service.py            # Upload/processing orchestrator
-│   │   │   ├── transaction_service.py     # Transaction CRUD
-│   │   │   └── dashboard_service.py       # Analytics aggregation
-│   │   ├── infrastructure/
-│   │   │   ├── dynamodb/                  # Repository classes (user, transaction, file)
-│   │   │   ├── s3/                        # S3 storage client
-│   │   │   └── llm/                       # Abstract LLM interface + providers
-│   │   ├── config.py                      # Environment-based settings
-│   │   └── main.py                        # FastAPI app
-│   ├── lambda_handler.py                  # Mangum entry point
-│   ├── tests/
-│   │   ├── unit/                          # Parser, extraction, categorization, auth tests
-│   │   └── integration/                   # API endpoint tests
-│   ├── requirements.txt
-│   └── requirements-dev.txt
+│   ├── src/
+│   │   ├── app.js                    # Express app setup
+│   │   ├── lambda.js                 # Lambda entry point
+│   │   ├── local.js                  # Local dev server
+│   │   ├── config.js                 # Environment config
+│   │   ├── routes/                   # API route handlers
+│   │   │   ├── auth.js               # Signup, login
+│   │   │   ├── files.js              # Upload, process
+│   │   │   ├── transactions.js       # List, update, create, delete
+│   │   │   └── dashboard.js          # Summary, insights
+│   │   ├── services/                 # Business logic
+│   │   │   ├── authService.js        # JWT + bcrypt
+│   │   │   ├── fileService.js        # Processing pipeline
+│   │   │   ├── parserService.js      # PDF + CSV parsing
+│   │   │   ├── extractionService.js  # Transaction extraction
+│   │   │   └── dashboardService.js   # Spending aggregation
+│   │   ├── infrastructure/           # External service integrations
+│   │   │   ├── dynamodb.js           # All DB operations
+│   │   │   ├── s3.js                 # File storage
+│   │   │   └── llm.js               # LLM categorization + vision
+│   │   └── middleware/
+│   │       └── auth.js               # JWT verification
+│   ├── esbuild.config.js            # Bundles to single lambda.js
+│   └── package.json
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── api/                           # Axios client + API functions
-│   │   ├── components/
-│   │   │   ├── ui/                        # Button, Input, Card, Spinner
-│   │   │   ├── layout/                    # Sidebar, TopBar, AppLayout
-│   │   │   ├── auth/                      # LoginForm, SignupForm
-│   │   │   ├── dashboard/                 # Charts, RecentTransactions
-│   │   │   ├── files/                     # FileUpload, FileList
-│   │   │   └── transactions/              # TransactionTable
-│   │   ├── hooks/                         # useAuth, useTransactions
-│   │   ├── pages/                         # Login, Signup, Dashboard, Upload, Transactions
-│   │   ├── store/                         # Zustand stores (auth)
-│   │   └── router.tsx                     # React Router config
+│   │   ├── pages/                    # Dashboard, Upload, Transactions, Login, Signup
+│   │   ├── components/               # UI components by feature
+│   │   ├── api/                      # Axios API client
+│   │   ├── store/                    # Zustand auth store
+│   │   ├── hooks/                    # useAuth, useTransactions
+│   │   └── router.tsx                # Route definitions
 │   ├── package.json
 │   └── vite.config.ts
 │
-├── infra/
-│   ├── main.tf                            # Terraform backend (S3) + AWS provider
-│   ├── dynamodb.tf                        # 3 tables with GSIs
-│   ├── s3.tf                              # Uploads bucket + frontend bucket
-│   ├── lambda.tf                          # Lambda + API Gateway + auto-generated JWT secret
-│   ├── cloudfront.tf                      # CDN with OAC + SPA routing
-│   ├── iam.tf                             # Lambda execution role
-│   ├── variables.tf                       # Input variables
-│   └── outputs.tf                         # API URL, CloudFront domain, bucket names
-│
-├── .github/workflows/
-│   ├── ci.yml                             # Lint + test on PR
-│   ├── deploy-backend.yml                 # Package + deploy Lambda on push to main
-│   └── deploy-frontend.yml                # Build + S3 sync + CloudFront invalidation
-│
-├── CLAUDE.md                              # Project guide for Claude Code
-└── README.md
+├── infra/                            # Terraform (DynamoDB, Lambda, S3, CloudFront, IAM)
+├── .github/workflows/                # CI + deploy pipelines
+├── plot.md                           # Architecture & planning (source of truth)
+├── CLAUDE.md                         # Development guide
+└── README.md                         # This file
 ```
 
 ## API Endpoints
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `POST` | `/api/auth/signup` | No | Create account (email + password) |
-| `POST` | `/api/auth/login` | No | Login, returns JWT token |
-| `POST` | `/api/files/upload` | JWT | Returns presigned S3 upload URL |
-| `POST` | `/api/files/{id}/process` | JWT | Triggers extraction pipeline |
-| `GET` | `/api/files` | JWT | List user's uploaded files |
-| `GET` | `/api/transactions` | JWT | List transactions (filter by date/category) |
-| `PATCH` | `/api/transactions/{id}` | JWT | Update transaction category |
-| `GET` | `/api/dashboard/summary` | JWT | Monthly spending analytics |
-| `GET` | `/api/health` | No | Health check |
-
-### Example Requests
-
-**Signup:**
-```bash
-curl -X POST https://<cloudfront-domain>/api/auth/signup \
-  -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "password": "securepass123"}'
-```
-
-**Upload flow:**
-```bash
-# Step 1: Get presigned URL
-curl -X POST https://<cloudfront-domain>/api/files/upload \
-  -H "Authorization: Bearer <jwt-token>" \
-  -H "Content-Type: application/json" \
-  -d '{"filename": "statement.csv", "content_type": "text/csv"}'
-
-# Step 2: Upload file directly to S3
-curl -X PUT "<presigned-url>" \
-  -H "Content-Type: text/csv" \
-  --data-binary @statement.csv
-
-# Step 3: Process
-curl -X POST https://<cloudfront-domain>/api/files/<file-id>/process \
-  -H "Authorization: Bearer <jwt-token>"
-```
-
-**Dashboard:**
-```bash
-curl "https://<cloudfront-domain>/api/dashboard/summary?month=3&year=2026" \
-  -H "Authorization: Bearer <jwt-token>"
-```
+| POST | `/api/auth/signup` | No | Create account |
+| POST | `/api/auth/login` | No | Login, returns JWT |
+| POST | `/api/files/upload` | JWT | Get presigned S3 upload URL |
+| POST | `/api/files/:id/process` | JWT | Process uploaded file |
+| GET | `/api/files` | JWT | List user's files |
+| GET | `/api/transactions` | JWT | List transactions (filter by date/category) |
+| POST | `/api/transactions` | JWT | Create manual transaction |
+| PATCH | `/api/transactions/:id` | JWT | Update transaction category |
+| DELETE | `/api/transactions/:id` | JWT | Delete transaction |
+| GET | `/api/dashboard/summary` | JWT | Monthly spending data |
+| GET | `/api/dashboard/insights` | JWT | Rule-based spending insights |
+| GET | `/api/categories` | JWT | List categories |
+| POST | `/api/categories` | Admin | Create category |
+| PATCH | `/api/categories/:id` | Admin | Update category |
+| DELETE | `/api/categories/:id` | Admin | Soft-delete category |
+| GET | `/api/merchants` | Admin | List merchant mappings |
+| POST | `/api/merchants` | Admin | Create merchant mapping |
+| GET | `/api/health` | No | Health check |
 
 ## DynamoDB Tables
 
 | Table | PK | GSI | Purpose |
-|-------|----|-----|---------|
+|-------|-----|-----|---------|
 | `fintracker-users` | `user_id` | `EmailIndex` (email) | User accounts |
-| `fintracker-transactions` | `transaction_id` | `UserDateIndex` (user_id + date) | Transaction records |
+| `fintracker-transactions` | `transaction_id` | `UserDateIndex` (user_id + date) | Transactions |
 | `fintracker-files` | `file_id` | `UserIndex` (user_id + upload_date) | Upload tracking |
-
-## LLM Integration
-
-The categorization engine is provider-agnostic via an abstract `LLMProvider` interface:
-
-- Provider is selected at runtime by `LLM_PROVIDER` environment variable
-- Supported categories: Food, Travel, Groceries, Bills, Shopping, Entertainment, Other
-- If the LLM call fails, automatic fallback to keyword-based rules
-- LLM is used ONLY for categorization (not parsing)
-
-To add a new provider: create a class implementing `LLMProvider.categorize()` and register it in the factory.
-
-## GitHub Secrets Required
-
-Only **3 secrets** at the organization level:
-
-| Secret | Description |
-|--------|-------------|
-| `AWS_ROLE_ARN` | IAM role ARN for GitHub OIDC authentication |
-| `LLM_API_KEY` | API key for the LLM provider (e.g., Groq) |
-| `LLM_PROVIDER` | Provider name (e.g., `groq`) |
-
-> JWT signing secret is auto-generated by Terraform — no manual setup needed.
-
-## Deployment
-
-### Prerequisites
-- Terraform >= 1.10
-- AWS CLI configured (or use the OIDC role)
-- Node.js 20+, Python 3.11+
-
-### First-Time Setup
-
-```bash
-# 1. Create AWS infrastructure
-cd infra
-terraform init
-terraform plan
-terraform apply
-
-# 2. Note the outputs:
-#    - cloudfront_domain  → your app URL
-#    - api_gateway_url    → API endpoint
-#    - frontend_bucket    → S3 bucket for frontend
-#    - lambda_function_name → Lambda function name
-```
-
-### Ongoing Deployment
-
-Push to `main` branch triggers automatic deployment:
-- **Backend changes** (`backend/**`) → packages and deploys Lambda
-- **Frontend changes** (`frontend/**`) → builds, syncs to S3, invalidates CloudFront
-
-### Terraform State
-
-- **Bucket**: `terraform-state-geekyrbhalala`
-- **Key**: `fintracker/terraform.tfstate`
-- **Locking**: S3-native lockfile (no DynamoDB table)
+| `fintracker-categories` | `category_id` | — | Dynamic category definitions |
+| `fintracker-merchant-mappings` | `merchant_pattern` | — | Merchant → category lookup |
 
 ## Local Development
 
 ### Backend
+
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements-dev.txt
-cp .env.example .env             # Edit with your values
-uvicorn app.main:app --reload --port 8000
+npm install
+npm run dev    # Starts on http://localhost:3001 (watch mode)
 ```
 
 ### Frontend
+
 ```bash
 cd frontend
 npm install
-npm run dev                      # Starts on http://localhost:5173
+npm run dev    # Starts on http://localhost:5173
 ```
 
-Vite proxies `/api` requests to `http://localhost:8000` in dev mode.
+Vite proxies `/api` requests to `http://localhost:3001` in dev mode.
 
-### Running Tests
+### Environment Variables
+
+Backend requires these environment variables (set in `.env` for local dev):
+
+```
+AWS_REGION=us-east-1
+DYNAMODB_USERS_TABLE=fintracker-users
+DYNAMODB_TRANSACTIONS_TABLE=fintracker-transactions
+DYNAMODB_FILES_TABLE=fintracker-files
+S3_UPLOADS_BUCKET=fintracker-uploads-<account-id>
+JWT_SECRET=<any-string-for-local-dev>
+LLM_PROVIDER=groq
+LLM_API_KEY=<your-groq-api-key>
+CORS_ORIGINS=*
+```
+
+## Deployment
+
+Push to `main` triggers automatic deployment via GitHub Actions:
+- Backend changes → bundles with esbuild, deploys to Lambda
+- Frontend changes → builds with Vite, syncs to S3, invalidates CloudFront
+
+### GitHub Secrets Required
+
+| Secret | Description |
+|--------|-------------|
+| `AWS_ROLE_ARN` | IAM role for OIDC authentication |
+| `LLM_API_KEY` | Groq API key |
+| `LLM_PROVIDER` | `groq` |
+
+### Infrastructure Setup
+
 ```bash
-cd backend
-pytest -v
+cd infra
+terraform init
+terraform plan
+terraform apply
 ```
 
-Tests use `moto` to mock AWS services (DynamoDB, S3) — no AWS credentials needed.
+Terraform state: `s3://terraform-state-geekyrbhalala/fintracker/terraform.tfstate`
 
 ## Cost
 
-For MVP traffic, this runs within AWS Free Tier (~$0/month):
-- Lambda: 1M requests/mo free
-- API Gateway: 1M calls/mo free
-- DynamoDB: 25 GB + 25 RCU/WCU free
-- S3: 5 GB free
-- CloudFront: 1 TB transfer free
+Runs within AWS Free Tier at MVP scale (~$0/month):
+- Lambda: 1M requests/month free
+- API Gateway: 1M calls/month free
+- DynamoDB: 25GB + 25 RCU/WCU free
+- S3: 5GB free
+- CloudFront: 1TB transfer free
+- Groq: Free tier for LLM calls
+
+## Current Status
+
+**MVP in progress** — Phase 1 of 4.
+
+Building: dynamic categories, Canadian merchant database, receipt image upload, enhanced
+dashboard with insights, manual transaction entry.
+
+## Future Vision
+
+- Budget setting and alerts
+- Recurring expense detection
+- AI-generated monthly summaries
+- Mobile app (React Native)
+- Canadian bank integration (Flinks)
+- Premium tier ($5.99/month)
+
+See [plot.md](plot.md) for detailed architecture decisions and roadmap.
