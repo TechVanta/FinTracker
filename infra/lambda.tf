@@ -8,8 +8,8 @@ resource "random_password" "jwt_secret" {
 resource "aws_lambda_function" "api" {
   function_name = "${var.project_name}-api"
   role          = aws_iam_role.lambda_exec.arn
-  handler       = "lambda_handler.handler"
-  runtime       = "python3.11"
+  handler       = "lambda.handler"
+  runtime       = "nodejs20.x"
   timeout       = 60
   memory_size   = 512
 

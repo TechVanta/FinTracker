@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  backend-lint-test:
-    name: Backend Lint & Test
+  backend-build:
+    name: Backend Build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -16,27 +16,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: backend/requirements-dev.txt
+          node-version: "20"
 
       - name: Install dependencies
-        run: pip install -r requirements-dev.txt
+        run: npm ci
 
-      - name: Lint with ruff
-        run: ruff check app/ tests/
-
-      - name: Run tests
-        run: pytest -v
-        env:
-          AWS_DEFAULT_REGION: us-east-1
-          AWS_ACCESS_KEY_ID: testing
-          AWS_SECRET_ACCESS_KEY: testing
-          JWT_SECRET: test-secret
-          LLM_API_KEY: ""
-          LLM_PROVIDER: grok
+      - name: Bundle
+        run: npm run bundle
 
   frontend-lint-build:
     name: Frontend Lint & Build

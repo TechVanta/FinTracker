@@ -36,21 +36,13 @@ override.tf.json
 .terraformrc
 terraform.rc
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-dist/
-build/
-.venv/
-venv/
+# Environment
 .env
-*.egg
 
 # Node
 node_modules/
 frontend/dist/
+backend/dist/
 .DS_Store
 
 # IDE
@@ -60,5 +52,4 @@ frontend/dist/
 *.swo
 
 # Lambda deployment
-backend/package/
 backend/*.zip

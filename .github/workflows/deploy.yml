@@ -64,11 +64,9 @@ jobs:
 
       - name: Create placeholder Lambda zip
         run: |
-          cd backend
-          mkdir -p package
-          echo "def handler(event, context): return {'statusCode': 200, 'body': 'placeholder'}" > package/lambda_handler.py
-          cd package && zip -r ../lambda.zip . && cd ..
-          rm -rf package
+          mkdir -p backend/dist
+          echo "exports.handler = async () => ({ statusCode: 200, body: 'placeholder' });" > backend/dist/lambda.js
+          cd backend/dist && zip -r ../lambda.zip . && cd ..
 
       - name: Terraform Init
         run: cd infra && terraform init -input=false
@@ -94,9 +92,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: "3.11"
+          node-version: "20"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -104,24 +102,16 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Install dependencies into package
-        run: |
-          cd backend
-          pip install -r requirements.txt -t package/
+      - name: Install dependencies
+        run: cd backend && npm ci
 
-          # Remove packages already in Lambda runtime (saves ~80MB)
-          cd package
-          rm -rf boto3* botocore* s3transfer* urllib3* setuptools* pip*
-          rm -rf *.dist-info
-          cd ..
-
-          cp -r app/ package/app/
-          cp lambda_handler.py package/
+      - name: Bundle with esbuild
+        run: cd backend && npm run bundle
 
       - name: Create deployment package
         run: |
-          cd backend/package
-          zip -r ../lambda.zip . -x '*.pyc' '__pycache__/*'
+          cd backend/dist
+          zip -r ../lambda.zip .
           echo "Package size: $(du -sh ../lambda.zip | cut -f1)"
 
       - name: Deploy to Lambda
@@ -137,19 +127,16 @@ jobs:
 
       - name: Update LLM environment variables
         run: |
-          # Get existing env vars (preserves JWT_SECRET and Terraform-managed vars)
           EXISTING=$(aws lambda get-function-configuration \
             --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
             --query 'Environment.Variables' --output json)
 
-          # Merge in LLM secrets
-          UPDATED=$(echo "$EXISTING" | python3 -c "
-          import sys, json
-          env = json.load(sys.stdin)
-          env['LLM_API_KEY'] = '${{ secrets.LLM_API_KEY }}'
-          env['LLM_PROVIDER'] = '${{ secrets.LLM_PROVIDER }}'
-          print(json.dumps({'Variables': env}))
-          ")
+          UPDATED=$(node -e "
+            const env = JSON.parse(process.argv[1]);
+            env.LLM_API_KEY = '${{ secrets.LLM_API_KEY }}';
+            env.LLM_PROVIDER = '${{ secrets.LLM_PROVIDER }}';
+            console.log(JSON.stringify({ Variables: env }));
+          " "$EXISTING")
 
           aws lambda update-function-configuration \
             --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
@@ -236,13 +223,11 @@ jobs:
       - name: Get deployment endpoints
         id: endpoints
         run: |
-          # CloudFront domain
           CF_DOMAIN=$(aws cloudfront list-distributions \
             --query "DistributionList.Items[?Origins.Items[?starts_with(DomainName, 'fintracker-frontend-')]].DomainName | [0]" \
             --output text 2>/dev/null || echo "not-deployed-yet")
           echo "cloudfront_domain=$CF_DOMAIN" >> $GITHUB_OUTPUT
 
-          # API Gateway URL
           API_ID=$(aws apigatewayv2 get-apis \
             --query "Items[?Name=='fintracker-api'].ApiId | [0]" \
             --output text 2>/dev/null || echo "")
@@ -255,21 +240,17 @@ jobs:
       - name: Print summary
         run: |
           echo ""
-          echo "╔══════════════════════════════════════════════════════════════╗"
-          echo "║                   DEPLOYMENT SUMMARY                        ║"
-          echo "╠══════════════════════════════════════════════════════════════╣"
-          echo "║                                                              ║"
-          echo "║  Infrastructure: ${{ needs.terraform.result }}"
-          echo "║  Backend:        ${{ needs.deploy-backend.result }}"
-          echo "║  Frontend:       ${{ needs.deploy-frontend.result }}"
-          echo "║                                                              ║"
-          echo "╠══════════════════════════════════════════════════════════════╣"
-          echo "║  ENDPOINTS                                                   ║"
-          echo "╠══════════════════════════════════════════════════════════════╣"
-          echo "║                                                              ║"
-          echo "║  App:     https://${{ steps.endpoints.outputs.cloudfront_domain }}"
-          echo "║  API:     ${{ steps.endpoints.outputs.api_url }}"
-          echo "║  Health:  https://${{ steps.endpoints.outputs.cloudfront_domain }}/api/health"
-          echo "║                                                              ║"
-          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo "============================================="
+          echo "         DEPLOYMENT SUMMARY"
+          echo "============================================="
           echo ""
+          echo "  Infrastructure: ${{ needs.terraform.result }}"
+          echo "  Backend:        ${{ needs.deploy-backend.result }}"
+          echo "  Frontend:       ${{ needs.deploy-frontend.result }}"
+          echo ""
+          echo "  ENDPOINTS:"
+          echo "  App:     https://${{ steps.endpoints.outputs.cloudfront_domain }}"
+          echo "  API:     ${{ steps.endpoints.outputs.api_url }}"
+          echo "  Health:  https://${{ steps.endpoints.outputs.cloudfront_domain }}/api/health"
+          echo ""
+          echo "============================================="

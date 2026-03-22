@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /e/FinTracker log --oneline --all)",
+      "Bash(python -c \"import secrets; print\\(secrets.token_urlsafe\\(48\\)\\)\")",
+      "Bash(gh auth:*)",
+      "Bash(grep -n \"AWS_ROLE_ARN\\\\|LLM_API_KEY\\\\|LLM_PROVIDER\" /e/FinTracker/.github/workflows/*.yml)",
+      "Bash(python3 -c \"s=''arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole''; print\\(s.split\\('':''\\)\\)\")",
+      "Bash(python -c \"s=''arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole''; parts=s.split\\('':''\\); print\\(len\\(parts\\), parts\\)\")",
+      "Bash(git commit:*)"
+    ]
+  }
+}

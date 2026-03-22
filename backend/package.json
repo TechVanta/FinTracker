@@ -1,0 +1,28 @@
+{
+  "name": "fintracker-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/local.js",
+    "bundle": "node esbuild.config.js",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.700.0",
+    "@aws-sdk/client-s3": "^3.700.0",
+    "@aws-sdk/lib-dynamodb": "^3.700.0",
+    "@aws-sdk/s3-request-presigner": "^3.700.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "papaparse": "^5.4.1",
+    "pdf-parse": "^1.1.1",
+    "serverless-http": "^3.2.0",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.2"
+  }
+}
