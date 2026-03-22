@@ -5,10 +5,15 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
 function getErrorMessage(err: unknown): string {
-  if (err instanceof AxiosError && err.response?.data?.detail) {
-    return String(err.response.data.detail);
+  if (err instanceof AxiosError) {
+    if (err.response) {
+      const data = err.response.data;
+      const detail = data?.detail || data?.message || JSON.stringify(data);
+      return `[${err.response.status}] ${detail}`;
+    }
+    return `Network error: ${err.message}`;
   }
-  return "Signup failed. Please try again.";
+  return `Unknown error: ${String(err)}`;
 }
 
 export default function SignupForm() {
