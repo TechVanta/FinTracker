@@ -38,21 +38,30 @@ export async function processFile(fileId, userId) {
   await updateFileStatus(fileId, "PROCESSING");
 
   try {
+    console.log(`Processing file ${fileId}: s3_key=${file.s3_key}, type=${file.file_type}`);
+
     const buffer = await getObject(file.s3_key);
+    console.log(`Downloaded ${buffer.length} bytes from S3`);
 
     let rawTransactions;
     if (file.file_type === "csv") {
       const rows = parseCsv(buffer);
+      console.log(`Parsed ${rows.length} CSV rows, columns: ${rows.length > 0 ? Object.keys(rows[0]).join(", ") : "none"}`);
       rawTransactions = extractFromCsv(rows);
     } else if (file.file_type === "pdf") {
       const text = await parsePdf(buffer);
+      console.log(`Extracted ${text.length} chars from PDF`);
       rawTransactions = extractFromText(text);
     } else {
       throw new Error(`Unsupported file type: ${file.file_type}`);
     }
 
+    console.log(`Extracted ${rawTransactions.length} transactions`);
+
     if (!rawTransactions.length) {
-      throw new Error("No transactions found in file");
+      const err = new Error("No transactions found in file. Check that your CSV has date, description, and amount columns.");
+      err.status = 422;
+      throw err;
     }
 
     const descriptions = rawTransactions.map((t) => t.description);

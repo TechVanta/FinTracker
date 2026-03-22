@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AxiosError } from "axios";
 import { requestUploadUrl, uploadFileToS3, processFile } from "@/api/files";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -37,7 +38,11 @@ export default function FileUpload() {
     },
     onError: (err: Error) => {
       setStage("error");
-      setError(err.message || "Upload failed");
+      if (err instanceof AxiosError && err.response?.data?.detail) {
+        setError(String(err.response.data.detail));
+      } else {
+        setError(err.message || "Upload failed");
+      }
     },
   });
 
