@@ -6,6 +6,7 @@ import Card from "@/components/ui/Card";
 import Spinner from "@/components/ui/Spinner";
 import MonthlySummaryChart from "@/components/dashboard/MonthlySummaryChart";
 import CategoryBreakdown from "@/components/dashboard/CategoryBreakdown";
+import SpendingByPeriod from "@/components/dashboard/SpendingByPeriod";
 import RecentTransactions from "@/components/dashboard/RecentTransactions";
 
 /**
@@ -158,6 +159,9 @@ export default function DashboardPage() {
             <MonthlySummaryChart data={summary?.monthly_trend ?? []} />
             <CategoryBreakdown data={summary?.category_breakdown ?? {}} />
           </div>
+
+          {/* ── Spending by Period (Day/Week/Month/Year toggle) ── */}
+          <SpendingByPeriod month={month} year={year} />
 
           {/* ── Top Merchants ────────────────────────────────── */}
           {summary?.top_merchants && summary.top_merchants.length > 0 && (

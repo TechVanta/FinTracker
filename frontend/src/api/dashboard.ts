@@ -55,3 +55,33 @@ export async function fetchInsights(
   });
   return data;
 }
+
+/** Time-period spending bucket (day/week/month/year) */
+export interface SpendingBucket {
+  key: string;
+  label: string;
+  total: number;
+  categories: Record<string, number>;
+}
+
+/** Response from the spending-by-period endpoint */
+export interface SpendingByPeriod {
+  period: string;
+  total: number;
+  transaction_count: number;
+  buckets: SpendingBucket[];
+  category_totals: Record<string, number>;
+}
+
+export type SpendingPeriod = "day" | "week" | "month" | "year";
+
+export async function fetchSpendingByPeriod(
+  period: SpendingPeriod,
+  month: number,
+  year: number
+): Promise<SpendingByPeriod> {
+  const { data } = await apiClient.get<SpendingByPeriod>("/dashboard/spending", {
+    params: { period, month, year },
+  });
+  return data;
+}

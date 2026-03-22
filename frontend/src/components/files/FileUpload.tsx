@@ -1,3 +1,13 @@
+/**
+ * FileUpload — Drag-and-drop upload zone for bank/credit card statements.
+ *
+ * Supports PDF and CSV files. Handles the full upload pipeline:
+ *   1. User selects or drops a file
+ *   2. File is uploaded directly to S3 via presigned URL
+ *   3. Backend processes the file (extraction + categorization)
+ *   4. Dashboard and transaction list refresh automatically
+ */
+
 import { useCallback, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
@@ -7,52 +17,37 @@ import Card from "@/components/ui/Card";
 
 type UploadStage = "idle" | "uploading" | "processing" | "done" | "error";
 
-/** MIME types accepted for upload (PDF, CSV, and common image formats) */
-const VALID_TYPES = [
-  "application/pdf",
-  "text/csv",
-  "image/jpeg",
-  "image/png",
-  "image/heic",
-  "image/webp",
-];
-
-/** File extensions shown in the file picker */
-const ACCEPT_STRING = ".pdf,.csv,.jpg,.jpeg,.png,.heic,.webp";
-
-/**
- * FileUpload — Drag-and-drop upload zone for statements, receipts, and screenshots.
- *
- * Supports PDF, CSV, and image files (JPG, PNG, HEIC, WebP).
- * Includes a dedicated camera button for mobile devices to capture receipts.
- */
 export default function FileUpload() {
   const [stage, setStage] = useState<UploadStage>("idle");
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState("");
   const queryClient = useQueryClient();
 
-  // Ref for the hidden camera input (mobile capture)
-  const cameraInputRef = useRef<HTMLInputElement>(null);
+  // Ref for the hidden file input — triggered programmatically by the Browse button
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       setStage("uploading");
       setError("");
 
+      // Step 1: Get a presigned S3 URL from the backend
       const { file_id, upload_url } = await requestUploadUrl(
         file.name,
-        file.type
+        file.type || "application/octet-stream"
       );
 
+      // Step 2: Upload directly to S3 (bypasses Lambda 6MB limit)
       await uploadFileToS3(upload_url, file);
 
+      // Step 3: Trigger backend processing (extract + categorize transactions)
       setStage("processing");
       const result = await processFile(file_id);
       return result;
     },
     onSuccess: () => {
       setStage("done");
+      // Refresh all data so the dashboard, transactions, and file list update
       queryClient.invalidateQueries({ queryKey: ["files"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -68,27 +63,13 @@ export default function FileUpload() {
     },
   });
 
-  /** Validate file type and kick off the upload pipeline */
+  /** Validate the file type and kick off the upload pipeline */
   const handleFile = useCallback(
     (file: File) => {
-      // HEIC files may not have a recognized MIME type on some browsers,
-      // so also check the file extension as a fallback.
-      const extension = file.name.split(".").pop()?.toLowerCase();
-      const isValidType = VALID_TYPES.includes(file.type);
-      const isValidExtension = [
-        "pdf",
-        "csv",
-        "jpg",
-        "jpeg",
-        "png",
-        "heic",
-        "webp",
-      ].includes(extension || "");
-
-      if (!isValidType && !isValidExtension) {
-        setError(
-          "Please upload a PDF, CSV, or image file (JPG, PNG, HEIC, WebP)"
-        );
+      // Check by extension (more reliable than MIME type for CSV files)
+      const ext = file.name.split(".").pop()?.toLowerCase();
+      if (ext !== "pdf" && ext !== "csv") {
+        setError("Please upload a PDF or CSV file (credit card or bank statement)");
         setStage("error");
         return;
       }
@@ -97,6 +78,7 @@ export default function FileUpload() {
     [uploadMutation]
   );
 
+  /** Handle file drop */
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -107,10 +89,11 @@ export default function FileUpload() {
     [handleFile]
   );
 
+  /** Handle file input change (from Browse button) */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
-    // Reset the input so the same file can be re-selected
+    // Reset so the same file can be selected again
     e.target.value = "";
   };
 
@@ -131,7 +114,7 @@ export default function FileUpload() {
       >
         {stage === "idle" && (
           <>
-            {/* Cloud upload icon */}
+            {/* Upload icon */}
             <svg
               className="mx-auto h-12 w-12 text-gray-400"
               fill="none"
@@ -146,63 +129,30 @@ export default function FileUpload() {
               />
             </svg>
             <p className="mt-2 text-sm text-gray-600">
-              Drag and drop your statements, receipts, or screenshots here
+              Drag and drop your credit card or bank statement here, or
             </p>
 
-            <div className="mt-3 flex items-center justify-center gap-2">
-              {/* Browse files button */}
-              <label>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept={ACCEPT_STRING}
-                  onChange={handleInputChange}
-                />
-                <Button variant="secondary" type="button" onClick={() => {}}>
-                  Browse Files
-                </Button>
-              </label>
+            {/* Hidden file input — triggered by the Browse button */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept=".pdf,.csv"
+              onChange={handleInputChange}
+            />
 
-              {/* Camera capture button (primarily for mobile) */}
-              <input
-                ref={cameraInputRef}
-                type="file"
-                className="hidden"
-                accept="image/*"
-                capture="environment"
-                onChange={handleInputChange}
-              />
-              <Button
-                variant="secondary"
-                type="button"
-                onClick={() => cameraInputRef.current?.click()}
-                title="Take a photo of a receipt"
-              >
-                {/* Camera icon */}
-                <svg
-                  className="h-4 w-4 mr-1.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"
-                  />
-                </svg>
-                Camera
-              </Button>
-            </div>
+            {/* Browse button — clicks the hidden input programmatically */}
+            <Button
+              variant="secondary"
+              type="button"
+              className="mt-2"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Browse Files
+            </Button>
 
             <p className="mt-2 text-xs text-gray-500">
-              PDF, CSV, JPG, PNG, HEIC, or WebP
+              PDF or CSV files — credit card statements, bank exports
             </p>
           </>
         )}
@@ -218,7 +168,7 @@ export default function FileUpload() {
           <div className="flex flex-col items-center gap-2">
             <div className="animate-spin h-8 w-8 border-4 border-primary-500 border-t-transparent rounded-full" />
             <p className="text-sm text-gray-600">
-              Processing transactions...
+              Extracting and categorizing transactions...
             </p>
           </div>
         )}

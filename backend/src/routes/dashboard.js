@@ -13,7 +13,7 @@
 
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
-import { getDashboardSummary, getInsights } from "../services/dashboardService.js";
+import { getDashboardSummary, getInsights, getSpendingByPeriod } from "../services/dashboardService.js";
 
 const router = Router();
 
@@ -71,6 +71,39 @@ router.get("/insights", requireAuth, async (req, res) => {
     return res.json(insights);
   } catch (err) {
     console.error("Dashboard insights error:", err);
+    return res.status(err.status || 500).json({ detail: err.message });
+  }
+});
+
+/**
+ * GET /api/dashboard/spending
+ * Returns spending data grouped by a time period (day/week/month/year).
+ *
+ * Query params:
+ *   period — "day" | "week" | "month" | "year" (default: "day")
+ *   month  — Month number (1-12), used for day/week views
+ *   year   — Full year (e.g., 2026)
+ *
+ * Response includes:
+ *   - buckets: Array of { key, label, total, categories: { catName: amount } }
+ *   - category_totals: Aggregate by category for the entire period
+ *   - total: Total spending across all buckets
+ */
+router.get("/spending", requireAuth, async (req, res) => {
+  try {
+    const now = new Date();
+    const period = req.query.period || "day";
+    const month = parseInt(req.query.month) || (now.getMonth() + 1);
+    const year = parseInt(req.query.year) || now.getFullYear();
+
+    if (!["day", "week", "month", "year"].includes(period)) {
+      return res.status(400).json({ detail: "period must be day, week, month, or year" });
+    }
+
+    const data = await getSpendingByPeriod(req.userId, period, month, year);
+    return res.json(data);
+  } catch (err) {
+    console.error("Dashboard spending error:", err);
     return res.status(err.status || 500).json({ detail: err.message });
   }
 });

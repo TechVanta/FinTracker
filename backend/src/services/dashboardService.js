@@ -306,6 +306,154 @@ export async function getInsights(userId, month, year) {
 // UTILITY
 // =============================================================================
 
+// =============================================================================
+// TIME-BASED SPENDING VIEW
+// =============================================================================
+
+/**
+ * Get spending data grouped by a specified time period.
+ *
+ * This powers the "Day / Week / Month / Year" view toggle on the dashboard.
+ * Returns spending aggregated by time bucket with category breakdowns.
+ *
+ * @param {string} userId - The user's ID
+ * @param {string} period - "day" | "week" | "month" | "year"
+ * @param {number} month - Month number (1-12), used for day/week views
+ * @param {number} year - Full year (e.g., 2026)
+ * @returns {Object} { period, buckets, category_totals }
+ */
+export async function getSpendingByPeriod(userId, period, month, year) {
+  let startDate, endDate;
+
+  if (period === "year") {
+    // Full year view: Jan 1 to Dec 31
+    startDate = `${year}-01-01`;
+    endDate = `${year + 1}-01-01`;
+  } else if (period === "month") {
+    // Monthly view for the full year: show each month as a bucket
+    startDate = `${year}-01-01`;
+    endDate = `${year + 1}-01-01`;
+  } else {
+    // Day or week view: scope to the selected month
+    startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+    const endMonth = month === 12 ? 1 : month + 1;
+    const endYear = month === 12 ? year + 1 : year;
+    endDate = `${endYear}-${String(endMonth).padStart(2, "0")}-01`;
+  }
+
+  const transactions = await getTransactionsByUser(userId, startDate, endDate);
+
+  // Filter out non-spending categories
+  const spending = transactions.filter(
+    (t) => t.category !== "Income" && t.category !== "Transfers"
+  );
+
+  // ── Bucket transactions by the requested period ──────────────────────
+  const bucketMap = {}; // { bucketKey: { label, total, categories: { catName: amount } } }
+  const categoryTotals = {};
+
+  for (const txn of spending) {
+    const bucketKey = getBucketKey(txn.date, period);
+    const bucketLabel = getBucketLabel(txn.date, period);
+
+    if (!bucketMap[bucketKey]) {
+      bucketMap[bucketKey] = { key: bucketKey, label: bucketLabel, total: 0, categories: {} };
+    }
+
+    bucketMap[bucketKey].total += txn.amount;
+    bucketMap[bucketKey].categories[txn.category] =
+      (bucketMap[bucketKey].categories[txn.category] || 0) + txn.amount;
+
+    categoryTotals[txn.category] = (categoryTotals[txn.category] || 0) + txn.amount;
+  }
+
+  // Sort buckets chronologically
+  const buckets = Object.values(bucketMap)
+    .sort((a, b) => a.key.localeCompare(b.key))
+    .map((b) => ({
+      ...b,
+      total: roundMoney(b.total),
+      categories: Object.fromEntries(
+        Object.entries(b.categories).map(([k, v]) => [k, roundMoney(v)])
+      ),
+    }));
+
+  return {
+    period,
+    total: roundMoney(spending.reduce((sum, t) => sum + t.amount, 0)),
+    transaction_count: spending.length,
+    buckets,
+    category_totals: Object.fromEntries(
+      Object.entries(categoryTotals)
+        .sort(([, a], [, b]) => b - a)
+        .map(([k, v]) => [k, roundMoney(v)])
+    ),
+  };
+}
+
+/**
+ * Get the bucket key for a transaction date and period.
+ * Bucket keys are sortable strings that group transactions into time periods.
+ */
+function getBucketKey(dateStr, period) {
+  const d = new Date(dateStr + "T00:00:00");
+
+  switch (period) {
+    case "day":
+      return dateStr; // YYYY-MM-DD
+
+    case "week": {
+      // ISO week: find the Monday of the week containing this date
+      const day = d.getDay();
+      const mondayOffset = day === 0 ? -6 : 1 - day; // Sunday = go back 6, otherwise go to Monday
+      const monday = new Date(d);
+      monday.setDate(d.getDate() + mondayOffset);
+      return monday.toISOString().slice(0, 10);
+    }
+
+    case "month":
+      return dateStr.slice(0, 7); // YYYY-MM
+
+    case "year":
+      return dateStr.slice(0, 4); // YYYY
+
+    default:
+      return dateStr;
+  }
+}
+
+/**
+ * Get a human-readable label for a time bucket.
+ */
+function getBucketLabel(dateStr, period) {
+  const d = new Date(dateStr + "T00:00:00");
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  switch (period) {
+    case "day":
+      return `${months[d.getMonth()]} ${d.getDate()}`;
+
+    case "week": {
+      const day = d.getDay();
+      const mondayOffset = day === 0 ? -6 : 1 - day;
+      const monday = new Date(d);
+      monday.setDate(d.getDate() + mondayOffset);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      return `${months[monday.getMonth()]} ${monday.getDate()}-${sunday.getDate()}`;
+    }
+
+    case "month":
+      return months[d.getMonth()];
+
+    case "year":
+      return dateStr.slice(0, 4);
+
+    default:
+      return dateStr;
+  }
+}
+
 /**
  * Round a number to 2 decimal places for money display.
  * Avoids floating point artifacts like $12.340000000001.

@@ -32,19 +32,10 @@ import { generatePresignedUploadUrl, getObject } from "../infrastructure/s3.js";
 import { parseCsv, parsePdf } from "./parserService.js";
 import { extractFromCsv, extractFromText } from "./extractionService.js";
 import { categorizeTransactions } from "../infrastructure/llm.js";
-import { extractFromImage, extractTransactionsFromScreenshot } from "../infrastructure/llm.js";
 
-// Supported file types and their MIME type mappings
-const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "heic", "webp"]);
-const DOCUMENT_EXTENSIONS = new Set(["pdf", "csv"]);
-
-/**
- * Determine if a file extension is a supported image type.
- * Used to route the file to the correct processing pipeline.
- */
-function isImageFile(extension) {
-  return IMAGE_EXTENSIONS.has(extension.toLowerCase());
-}
+// Supported file types for MVP — PDF and CSV only.
+// Image support (Groq Vision) is planned for a future phase.
+const SUPPORTED_EXTENSIONS = new Set(["pdf", "csv"]);
 
 // =============================================================================
 // UPLOAD INITIATION
@@ -68,9 +59,9 @@ export async function initiateUpload(userId, filename, contentType) {
   const s3Key = `uploads/${userId}/${fileId}.${ext}`;
 
   // Validate supported file types
-  if (!IMAGE_EXTENSIONS.has(ext) && !DOCUMENT_EXTENSIONS.has(ext)) {
+  if (!SUPPORTED_EXTENSIONS.has(ext)) {
     const err = new Error(
-      `Unsupported file type: .${ext}. Supported: PDF, CSV, JPG, PNG, HEIC, WebP`
+      `Unsupported file type: .${ext}. Supported: PDF, CSV`
     );
     err.status = 400;
     throw err;
@@ -132,23 +123,14 @@ export async function processFile(fileId, userId) {
 
     // ── Route to the appropriate extraction pipeline ──────────────────
     if (file.file_type === "csv") {
-      // CSV: Parse columns → extract transactions using column detection
+      // CSV: Parse columns → extract transactions using smart column detection
       const parsed = parseCsv(buffer);
-      console.log(
-        `Parsed CSV: hasHeaders=${parsed.hasHeaders}, rows=${parsed.rows.length}, ` +
-        `fields=${parsed.fields?.join(", ") || "none (headerless)"}`
-      );
       rawTransactions = extractFromCsv(parsed);
 
     } else if (file.file_type === "pdf") {
       // PDF: Extract text → find transactions via regex patterns
       const text = await parsePdf(buffer);
-      console.log(`Extracted ${text.length} chars from PDF`);
       rawTransactions = extractFromText(text);
-
-    } else if (isImageFile(file.file_type)) {
-      // Image: Send to Groq Vision → parse structured JSON response
-      rawTransactions = await processImageFile(buffer, file.file_type);
 
     } else {
       throw new Error(`Unsupported file type: ${file.file_type}`);
@@ -179,7 +161,7 @@ export async function processFile(fileId, userId) {
       amount: raw.amount,
       category: categories[i],
       file_id: fileId,
-      source: isImageFile(file.file_type) ? "image" : file.file_type,
+      source: file.file_type,
       created_at: new Date().toISOString(),
     }));
 
@@ -195,77 +177,6 @@ export async function processFile(fileId, userId) {
     await updateFileStatus(fileId, "FAILED");
     throw err;
   }
-}
-
-// =============================================================================
-// IMAGE PROCESSING HELPERS
-// =============================================================================
-
-/**
- * Process an image file (receipt photo or banking screenshot).
- *
- * Uses Groq Vision to extract transaction data. The function detects whether
- * the image is a single receipt (1 transaction) or a screenshot showing
- * multiple transactions, and routes to the appropriate extraction prompt.
- *
- * For receipts: Extracts merchant, date, and total amount as a single transaction.
- * For screenshots: Extracts all visible transactions with dates and amounts.
- *
- * @param {Buffer} buffer - Raw image data from S3
- * @param {string} extension - File extension (jpg, png, etc.)
- * @returns {Array<{date: string, description: string, amount: number}>}
- */
-async function processImageFile(buffer, extension) {
-  // Convert buffer to base64 for the Vision API
-  const base64Image = buffer.toString("base64");
-
-  // Map file extensions to MIME types
-  const mimeTypes = {
-    jpg: "image/jpeg",
-    jpeg: "image/jpeg",
-    png: "image/png",
-    heic: "image/heic",
-    webp: "image/webp",
-  };
-  const mimeType = mimeTypes[extension.toLowerCase()] || "image/jpeg";
-
-  // First, try extracting as a receipt (single transaction with details)
-  console.log("Attempting receipt extraction via Groq Vision...");
-  const receiptData = await extractFromImage(base64Image, mimeType);
-
-  // If receipt extraction got a valid result with merchant and total, use it
-  if (receiptData.merchant && receiptData.total && !receiptData.error) {
-    console.log(`Receipt extracted: ${receiptData.merchant}, $${receiptData.total}`);
-
-    // Use today's date if the receipt date couldn't be read
-    const date = receiptData.date || new Date().toISOString().split("T")[0];
-
-    return [{
-      date,
-      description: receiptData.merchant,
-      amount: parseFloat(receiptData.total) || 0,
-    }];
-  }
-
-  // If receipt extraction failed, try as a screenshot with multiple transactions
-  console.log("Receipt extraction incomplete, trying screenshot extraction...");
-  const screenshotData = await extractTransactionsFromScreenshot(base64Image, mimeType);
-
-  if (screenshotData.transactions && screenshotData.transactions.length > 0) {
-    console.log(`Screenshot extracted: ${screenshotData.transactions.length} transactions`);
-
-    return screenshotData.transactions
-      .filter((t) => t.description && t.amount)
-      .map((t) => ({
-        date: t.date || new Date().toISOString().split("T")[0],
-        description: t.description,
-        amount: parseFloat(t.amount) || 0,
-      }));
-  }
-
-  // Both extraction methods failed
-  const errorMsg = receiptData.error || screenshotData.error || "Unknown";
-  throw new Error(`Could not extract transaction data from image: ${errorMsg}`);
 }
 
 // =============================================================================
