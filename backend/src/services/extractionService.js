@@ -146,6 +146,28 @@ const SKIP_KEYWORDS = [
 ];
 
 /**
+ * Keywords that indicate a payment/credit entry (not a real expense).
+ * These are credit card bill payments, refunds, and account credits that
+ * appear on statements but should not count as spending.
+ */
+const PAYMENT_KEYWORDS = [
+  "payment - thank you", "payment thank you", "payment received",
+  "payment - received", "payment credited", "bill payment",
+  "automatic payment", "autopay", "auto payment",
+  "credit card payment", "online payment", "payment from",
+  "paymt received", "pmt received", "pmt thank you",
+];
+
+/**
+ * Check if a description looks like a payment/credit entry we should skip.
+ * These are credit card bill payments, refunds, etc.
+ */
+function isPaymentEntry(description) {
+  const lower = description.toLowerCase();
+  return PAYMENT_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
+/**
  * Check if a description looks like a summary row we should skip.
  */
 function shouldSkipRow(description) {
@@ -252,17 +274,28 @@ function extractWithHeaders(rows) {
     let amount = 0;
     if (amountCol) {
       amount = parseAmount(row[amountCol]);
+      // In a single amount column, negative values are credits/payments — skip them
+      if (amount < 0) continue;
     } else if (debitCol || creditCol) {
-      // Debit/credit split: debits are spending (positive), credits are refunds
       const debit = debitCol ? parseAmount(row[debitCol]) : 0;
       const credit = creditCol ? parseAmount(row[creditCol]) : 0;
-      // Use whichever is non-zero. If both are present, debit takes priority
-      // (this is a spending tracker — we care about money going out)
-      amount = debit || credit;
+
+      // Skip rows where only the credit column has a value — these are
+      // payments (e.g., credit card bill paid via bank transfer) not expenses
+      if (Math.abs(credit) > 0 && Math.abs(debit) === 0) continue;
+
+      // Skip rows where debit and credit match — internal balancing entries
+      if (Math.abs(debit) > 0 && Math.abs(credit) > 0 && Math.abs(Math.abs(debit) - Math.abs(credit)) < 0.01) continue;
+
+      // Use the debit amount (actual spending)
+      amount = debit;
     }
 
     // Skip rows with no amount (header rows, empty rows)
     if (amount === 0) continue;
+
+    // Skip payment/credit entries (e.g., "PAYMENT - THANK YOU")
+    if (isPaymentEntry(description)) continue;
 
     transactions.push({
       date: normalizeDate(rawDate),
@@ -423,17 +456,32 @@ function extractWithoutHeaders(rows) {
     if (!description) continue;
     if (shouldSkipRow(description)) continue;
 
-    // Get amount: try each amount column, use the first non-zero value
+    // Get amount from detected amount columns
     let amount = 0;
-    for (const colIdx of amountColIndices) {
-      const val = parseAmount((row[colIdx] || "").toString());
-      if (val !== 0) {
-        amount = val;
-        break;
-      }
+    if (amountColIndices.length === 1) {
+      // Single amount column: negative values are credits/payments — skip them
+      const val = parseAmount((row[amountColIndices[0]] || "").toString());
+      if (val < 0) continue;
+      amount = val;
+    } else if (amountColIndices.length >= 2) {
+      // Two amount columns = likely debit/credit split
+      // First column (most non-zero values) is debit, second is credit
+      const debit = parseAmount((row[amountColIndices[0]] || "").toString());
+      const credit = parseAmount((row[amountColIndices[1]] || "").toString());
+
+      // Skip credit-only rows (payments, not expenses)
+      if (Math.abs(credit) > 0 && Math.abs(debit) === 0) continue;
+
+      // Skip rows where debit and credit match (balancing entries)
+      if (Math.abs(debit) > 0 && Math.abs(credit) > 0 && Math.abs(Math.abs(debit) - Math.abs(credit)) < 0.01) continue;
+
+      amount = debit;
     }
 
     if (amount === 0) continue;
+
+    // Skip payment/credit entries by description
+    if (isPaymentEntry(description)) continue;
 
     transactions.push({
       date: date ? normalizeDate(date) : new Date().toISOString().slice(0, 10),
