@@ -108,11 +108,21 @@ jobs:
         run: |
           cd backend
           pip install -r requirements.txt -t package/
+
+          # Remove packages already in Lambda runtime (saves ~80MB)
+          cd package
+          rm -rf boto3* botocore* s3transfer* urllib3* setuptools* pip*
+          rm -rf *.dist-info
+          cd ..
+
           cp -r app/ package/app/
           cp lambda_handler.py package/
 
       - name: Create deployment package
-        run: cd backend/package && zip -r ../lambda.zip .
+        run: |
+          cd backend/package
+          zip -r ../lambda.zip . -x '*.pyc' '__pycache__/*'
+          echo "Package size: $(du -sh ../lambda.zip | cut -f1)"
 
       - name: Deploy to Lambda
         run: |
