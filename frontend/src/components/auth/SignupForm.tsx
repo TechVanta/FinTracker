@@ -1,7 +1,15 @@
 import { FormEvent, useState } from "react";
+import { AxiosError } from "axios";
 import { useSignup } from "@/hooks/useAuth";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+
+function getErrorMessage(err: unknown): string {
+  if (err instanceof AxiosError && err.response?.data?.detail) {
+    return String(err.response.data.detail);
+  }
+  return "Signup failed. Please try again.";
+}
 
 export default function SignupForm() {
   const [email, setEmail] = useState("");
@@ -52,7 +60,7 @@ export default function SignupForm() {
       />
       {(error || signup.isError) && (
         <p className="text-sm text-red-600">
-          {error || "Signup failed. Email may already be registered."}
+          {error || getErrorMessage(signup.error)}
         </p>
       )}
       <Button type="submit" loading={signup.isPending} className="w-full">

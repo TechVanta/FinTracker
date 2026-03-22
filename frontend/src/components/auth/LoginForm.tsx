@@ -1,7 +1,15 @@
 import { FormEvent, useState } from "react";
+import { AxiosError } from "axios";
 import { useLogin } from "@/hooks/useAuth";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+
+function getErrorMessage(err: unknown): string {
+  if (err instanceof AxiosError && err.response?.data?.detail) {
+    return String(err.response.data.detail);
+  }
+  return "Login failed. Please try again.";
+}
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -31,7 +39,7 @@ export default function LoginForm() {
       />
       {login.isError && (
         <p className="text-sm text-red-600">
-          Invalid email or password. Please try again.
+          {getErrorMessage(login.error)}
         </p>
       )}
       <Button type="submit" loading={login.isPending} className="w-full">

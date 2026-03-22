@@ -70,4 +70,29 @@ async def domain_error_handler(request: Request, exc: DomainError):
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "healthy", "version": "0.1.0"}
+    import boto3
+    import os
+    try:
+        dynamodb = boto3.client("dynamodb", region_name=os.environ.get("AWS_REGION", "us-east-1"))
+        tables = [
+            settings.DYNAMODB_USERS_TABLE,
+            settings.DYNAMODB_TRANSACTIONS_TABLE,
+            settings.DYNAMODB_FILES_TABLE,
+        ]
+        table_status = {}
+        for table_name in tables:
+            resp = dynamodb.describe_table(TableName=table_name)
+            table_status[table_name] = resp["Table"]["TableStatus"]
+        return {
+            "status": "healthy",
+            "version": "0.1.0",
+            "tables": table_status,
+            "region": os.environ.get("AWS_REGION", "unknown"),
+            "s3_bucket": settings.S3_UPLOADS_BUCKET,
+        }
+    except Exception as e:
+        return {
+            "status": "degraded",
+            "version": "0.1.0",
+            "error": f"{type(e).__name__}: {e}",
+        }
