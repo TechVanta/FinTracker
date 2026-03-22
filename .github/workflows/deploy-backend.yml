@@ -1,0 +1,74 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Package & Deploy Lambda
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Install dependencies into package
+        run: |
+          cd backend
+          pip install -r requirements.txt -t package/
+          cp -r app/ package/app/
+          cp lambda_handler.py package/
+
+      - name: Create deployment package
+        run: |
+          cd backend/package
+          zip -r ../lambda.zip .
+
+      - name: Get Lambda function name from Terraform
+        id: tf
+        run: |
+          cd infra
+          terraform init -input=false
+          echo "function_name=$(terraform output -raw lambda_function_name)" >> $GITHUB_OUTPUT
+
+      - name: Deploy to Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ steps.tf.outputs.function_name }} \
+            --zip-file fileb://backend/lambda.zip
+
+      - name: Update LLM environment variables
+        run: |
+          # Get existing env vars (preserves JWT_SECRET and Terraform-managed vars)
+          EXISTING=$(aws lambda get-function-configuration \
+            --function-name ${{ steps.tf.outputs.function_name }} \
+            --query 'Environment.Variables' --output json)
+
+          # Merge in LLM secrets
+          UPDATED=$(echo "$EXISTING" | python3 -c "
+          import sys, json
+          env = json.load(sys.stdin)
+          env['LLM_API_KEY'] = '${{ secrets.LLM_API_KEY }}'
+          env['LLM_PROVIDER'] = '${{ secrets.LLM_PROVIDER }}'
+          print(json.dumps({'Variables': env}))
+          ")
+
+          aws lambda update-function-configuration \
+            --function-name ${{ steps.tf.outputs.function_name }} \
+            --environment "$UPDATED"
