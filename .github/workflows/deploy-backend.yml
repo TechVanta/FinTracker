@@ -11,6 +11,9 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  LAMBDA_FUNCTION_NAME: fintracker-api
+
 jobs:
   deploy:
     name: Package & Deploy Lambda
@@ -29,11 +32,6 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-1
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: false
-
       - name: Install dependencies into package
         run: |
           cd backend
@@ -46,24 +44,22 @@ jobs:
           cd backend/package
           zip -r ../lambda.zip .
 
-      - name: Get Lambda function name from Terraform
-        id: tf
-        run: |
-          cd infra
-          terraform init -input=false
-          echo "function_name=$(terraform output -raw lambda_function_name)" >> $GITHUB_OUTPUT
-
       - name: Deploy to Lambda
         run: |
           aws lambda update-function-code \
-            --function-name ${{ steps.tf.outputs.function_name }} \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
             --zip-file fileb://backend/lambda.zip
+
+      - name: Wait for function update
+        run: |
+          aws lambda wait function-updated \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }}
 
       - name: Update LLM environment variables
         run: |
           # Get existing env vars (preserves JWT_SECRET and Terraform-managed vars)
           EXISTING=$(aws lambda get-function-configuration \
-            --function-name ${{ steps.tf.outputs.function_name }} \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
             --query 'Environment.Variables' --output json)
 
           # Merge in LLM secrets
@@ -76,5 +72,5 @@ jobs:
           ")
 
           aws lambda update-function-configuration \
-            --function-name ${{ steps.tf.outputs.function_name }} \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
             --environment "$UPDATED"
