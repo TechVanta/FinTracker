@@ -1,4 +1,4 @@
-import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import config from "../config.js";
 
@@ -19,4 +19,11 @@ export async function getObject(key) {
     Key: key,
   }));
   return Buffer.from(await result.Body.transformToByteArray());
+}
+
+export async function deleteObject(key) {
+  await s3.send(new DeleteObjectCommand({
+    Bucket: config.s3.uploadsBucket,
+    Key: key,
+  }));
 }

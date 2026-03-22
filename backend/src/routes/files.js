@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
-import { initiateUpload, processFile, listFiles } from "../services/fileService.js";
+import { initiateUpload, processFile, listFiles, deleteFile } from "../services/fileService.js";
 
 const router = Router();
 
@@ -24,6 +24,16 @@ router.post("/:fileId/process", requireAuth, async (req, res) => {
     return res.json(result);
   } catch (err) {
     console.error("Process error:", err);
+    return res.status(err.status || 500).json({ detail: err.message });
+  }
+});
+
+router.delete("/:fileId", requireAuth, async (req, res) => {
+  try {
+    const result = await deleteFile(req.params.fileId, req.userId);
+    return res.json(result);
+  } catch (err) {
+    console.error("Delete file error:", err);
     return res.status(err.status || 500).json({ detail: err.message });
   }
 });

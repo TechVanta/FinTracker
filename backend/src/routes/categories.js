@@ -22,6 +22,7 @@ import {
   editCategory,
   removeCategory,
   seedCategories,
+  seedSubcategories,
 } from "../services/categoryService.js";
 
 const router = Router();
@@ -136,6 +137,26 @@ router.post("/seed", requireAuth, requireAdmin, async (req, res) => {
     });
   } catch (err) {
     console.error("Seed categories error:", err);
+    return res.status(err.status || 500).json({ detail: err.message });
+  }
+});
+
+/**
+ * POST /api/categories/seed-subcategories
+ * Add subcategories to existing parent categories. Admin only.
+ * Use this on deployments that were set up before subcategories were added.
+ * Also adds any new parent categories (e.g., Investment) that don't exist yet.
+ * Safe to call multiple times — skips categories that already exist.
+ */
+router.post("/seed-subcategories", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const count = await seedSubcategories();
+    return res.json({
+      message: count > 0 ? `Added ${count} subcategories` : "All subcategories already exist",
+      count,
+    });
+  } catch (err) {
+    console.error("Seed subcategories error:", err);
     return res.status(err.status || 500).json({ detail: err.message });
   }
 });

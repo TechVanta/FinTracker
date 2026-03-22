@@ -135,6 +135,12 @@ const DEFAULT_CATEGORIES = [
     color: "#8B5CF6",
     sort_order: 1,
     keywords: ["rent", "mortgage", "condo fee", "strata", "property tax", "home insurance", "tenant insurance"],
+    subcategories: [
+      { name: "Rent / Mortgage", icon: "home", color: "#7C3AED", keywords: ["rent", "mortgage", "condo fee", "strata"] },
+      { name: "Property Tax", icon: "landmark", color: "#6D28D9", keywords: ["property tax", "municipal tax"] },
+      { name: "Home Maintenance", icon: "wrench", color: "#5B21B6", keywords: ["plumber", "electrician", "home repair", "handyman", "renovation", "home hardware"] },
+      { name: "Furniture & Decor", icon: "sofa", color: "#4C1D95", keywords: ["ikea", "structube", "wayfair", "furniture", "home decor", "mattress"] },
+    ],
   },
   {
     name: "Utilities",
@@ -147,6 +153,11 @@ const DEFAULT_CATEGORIES = [
       "rogers", "bell", "telus", "shaw", "cogeco", "teksavvy", "freedom mobile",
       "koodo", "fido", "virgin plus", "chatr", "public mobile", "videotron",
       "internet", "mobile phone", "wireless",
+    ],
+    subcategories: [
+      { name: "Electricity & Gas", icon: "zap", color: "#D97706", keywords: ["hydro", "electricity", "enbridge", "fortisbc", "atco", "toronto hydro", "bc hydro", "enmax", "alectra"] },
+      { name: "Water & Sewer", icon: "droplet", color: "#B45309", keywords: ["water", "sewer", "water utility"] },
+      { name: "Internet & Phone", icon: "wifi", color: "#92400E", keywords: ["rogers", "bell", "telus", "shaw", "cogeco", "teksavvy", "freedom mobile", "koodo", "fido", "internet", "mobile phone", "wireless"] },
     ],
   },
   {
@@ -162,6 +173,15 @@ const DEFAULT_CATEGORIES = [
       "voila", "pc express", "instacart",
       "costco", "wholesale club",
     ],
+    subcategories: [
+      { name: "Produce", icon: "apple", color: "#059669", keywords: ["produce", "fruit", "vegetable", "organic produce", "farm boy"] },
+      { name: "Dairy & Eggs", icon: "egg", color: "#047857", keywords: ["dairy", "milk", "cheese", "yogurt", "eggs"] },
+      { name: "Meat & Seafood", icon: "beef", color: "#065F46", keywords: ["meat", "chicken", "beef", "pork", "fish", "seafood", "butcher"] },
+      { name: "Packaged Foods", icon: "package", color: "#064E3B", keywords: ["packaged food", "snack", "cereal", "canned", "frozen food"] },
+      { name: "Bakery", icon: "cake", color: "#0D9488", keywords: ["bakery", "bread", "pastry", "cake"] },
+      { name: "Beverages", icon: "cup-soda", color: "#0F766E", keywords: ["beverage", "juice", "pop", "soda", "water bottle"] },
+      { name: "Household Supplies", icon: "spray-can", color: "#115E59", keywords: ["cleaning", "paper towel", "toilet paper", "detergent", "household"] },
+    ],
   },
   {
     name: "Dining",
@@ -176,6 +196,12 @@ const DEFAULT_CATEGORIES = [
       "fantuan", "ritual", "dining", "cafe", "bistro", "pub", "grill",
       "sushi", "ramen", "pho", "thai", "burrito", "taco", "pizza", "burger",
       "kfc", "chipotle", "five guys", "dairy queen", "new york fries",
+    ],
+    subcategories: [
+      { name: "Coffee & Cafe", icon: "coffee", color: "#DC2626", keywords: ["tim hortons", "tims", "starbucks", "second cup", "coffee", "cafe", "tea"] },
+      { name: "Fast Food", icon: "hamburger", color: "#B91C1C", keywords: ["mcdonald", "a&w", "subway", "popeyes", "wendy", "kfc", "burger king", "pizza pizza", "harvey", "dairy queen", "new york fries", "five guys", "chipotle"] },
+      { name: "Restaurants", icon: "utensils", color: "#991B1B", keywords: ["restaurant", "bistro", "pub", "grill", "boston pizza", "swiss chalet", "st-hubert", "dining"] },
+      { name: "Food Delivery", icon: "truck", color: "#7F1D1D", keywords: ["uber eats", "ubereats", "doordash", "skip the dishes", "skipthedishes", "fantuan", "ritual"] },
     ],
   },
   {
@@ -193,6 +219,13 @@ const DEFAULT_CATEGORIES = [
       "407 etr", "impark", "indigo parking", "parkopedia", "green p", "parking",
       "mr. lube", "jiffy lube", "canadian tire auto", "auto repair", "car wash",
       "car insurance", "car payment", "car lease",
+    ],
+    subcategories: [
+      { name: "Gas & Fuel", icon: "fuel", color: "#2563EB", keywords: ["petro-canada", "petro canada", "shell", "esso", "costco gas", "pioneer", "ultramar", "gas station", "fuel"] },
+      { name: "Public Transit", icon: "train", color: "#1D4ED8", keywords: ["presto", "compass", "ttc", "stm", "translink", "oc transpo", "go transit", "via rail", "transit", "bus pass"] },
+      { name: "Ride Share & Taxi", icon: "car-taxi", color: "#1E40AF", keywords: ["uber", "lyft", "taxi", "cab"] },
+      { name: "Parking & Tolls", icon: "square-parking", color: "#1E3A8A", keywords: ["407 etr", "impark", "indigo parking", "green p", "parking", "toll"] },
+      { name: "Car Maintenance", icon: "wrench", color: "#172554", keywords: ["mr. lube", "jiffy lube", "auto repair", "car wash", "oil change", "tire"] },
     ],
   },
   {
@@ -212,6 +245,12 @@ const DEFAULT_CATEGORIES = [
       "old navy", "gap", "h&m", "zara", "uniqlo", "lululemon", "aritzia",
       "nordstrom", "sephora",
     ],
+    subcategories: [
+      { name: "Clothing & Fashion", icon: "shirt", color: "#DB2777", keywords: ["old navy", "gap", "h&m", "zara", "uniqlo", "lululemon", "aritzia", "nordstrom", "winners", "marshalls", "simons", "hudson bay", "the bay"] },
+      { name: "Electronics", icon: "monitor", color: "#BE185D", keywords: ["best buy", "apple store", "apple.com", "the source", "electronics"] },
+      { name: "Home Improvement", icon: "hammer", color: "#9D174D", keywords: ["home depot", "lowes", "canadian tire", "rona", "home hardware"] },
+      { name: "Online Shopping", icon: "globe", color: "#831843", keywords: ["amazon", "walmart.ca", "online order"] },
+    ],
   },
   {
     name: "Entertainment",
@@ -227,6 +266,13 @@ const DEFAULT_CATEGORIES = [
       "ticketmaster", "stubhub", "eventbrite",
       "golf", "bowling", "skating", "ski", "recreation",
     ],
+    subcategories: [
+      { name: "Streaming", icon: "tv", color: "#9333EA", keywords: ["netflix", "spotify", "disney+", "disney plus", "crave", "apple tv", "youtube premium", "amazon prime", "paramount", "hbo"] },
+      { name: "Movies & Theatre", icon: "film", color: "#7E22CE", keywords: ["cineplex", "landmark cinema", "imax", "movie", "theatre"] },
+      { name: "Gaming", icon: "gamepad", color: "#6B21A8", keywords: ["steam", "playstation", "xbox", "nintendo", "epic games", "gaming"] },
+      { name: "Sports & Fitness", icon: "dumbbell", color: "#581C87", keywords: ["goodlife", "ymca", "ywca", "gym", "fitness", "golf", "bowling", "skating", "ski", "recreation"] },
+      { name: "Events & Concerts", icon: "ticket", color: "#4C1D95", keywords: ["ticketmaster", "stubhub", "eventbrite", "concert", "event", "festival"] },
+    ],
   },
   {
     name: "Health",
@@ -240,6 +286,12 @@ const DEFAULT_CATEGORIES = [
       "physiotherapy", "physio", "chiropractic", "massage therapy",
       "medical", "clinic", "doctor", "walk-in",
       "lifelab", "dynacare", "blood test",
+    ],
+    subcategories: [
+      { name: "Pharmacy", icon: "pill", color: "#E11D48", keywords: ["shoppers drug mart", "pharmaprix", "rexall", "london drugs", "pharmacy", "prescription"] },
+      { name: "Dental & Vision", icon: "eye", color: "#BE123C", keywords: ["dental", "dentist", "optometrist", "optician", "vision", "glasses", "contacts"] },
+      { name: "Mental Health", icon: "brain", color: "#9F1239", keywords: ["therapy", "therapist", "counselling", "psycholog", "mental health"] },
+      { name: "Medical & Specialists", icon: "stethoscope", color: "#881337", keywords: ["medical", "clinic", "doctor", "walk-in", "specialist", "physiotherapy", "physio", "chiropractic", "massage therapy"] },
     ],
   },
   {
@@ -266,28 +318,50 @@ const DEFAULT_CATEGORIES = [
       "car rental", "enterprise", "hertz", "avis", "budget rent",
       "travel insurance", "world nomads",
     ],
+    subcategories: [
+      { name: "Flights", icon: "plane", color: "#0891B2", keywords: ["air canada", "westjet", "porter", "flair", "swoop", "airline", "flight"] },
+      { name: "Accommodation", icon: "bed", color: "#0E7490", keywords: ["airbnb", "booking.com", "expedia", "hotels.com", "marriott", "hilton", "hotel", "motel"] },
+      { name: "Car Rental", icon: "car", color: "#155E75", keywords: ["car rental", "enterprise", "hertz", "avis", "budget rent"] },
+    ],
+  },
+  {
+    name: "Investment",
+    icon: "trending-up",
+    color: "#059669",
+    sort_order: 11,
+    keywords: [
+      "wealthsimple", "questrade", "interactive brokers", "td direct investing",
+      "rbc direct", "bmo investorline", "cibc investor",
+      "etf", "stock", "mutual fund", "gic",
+      "crypto", "bitcoin", "coinbase", "newton", "shakepay", "bitbuy",
+    ],
+    subcategories: [
+      { name: "Stocks & ETFs", icon: "bar-chart", color: "#047857", keywords: ["stock", "etf", "mutual fund", "gic", "questrade", "wealthsimple trade", "td direct investing"] },
+      { name: "RRSP", icon: "piggy-bank", color: "#065F46", keywords: ["rrsp", "retirement", "registered retirement"] },
+      { name: "TFSA", icon: "shield-check", color: "#064E3B", keywords: ["tfsa", "tax-free savings"] },
+      { name: "RESP / FHSA", icon: "graduation-cap", color: "#14532D", keywords: ["resp", "fhsa", "education savings", "first home savings"] },
+      { name: "Crypto", icon: "bitcoin", color: "#166534", keywords: ["crypto", "bitcoin", "coinbase", "newton", "shakepay", "bitbuy", "ethereum"] },
+    ],
   },
   {
     name: "Financial",
     icon: "dollar-sign",
     color: "#14B8A6",
-    sort_order: 11,
+    sort_order: 12,
     keywords: [
       "bank fee", "monthly fee", "account fee", "service charge",
       "credit card interest", "interest charge", "annual fee",
       "overdraft", "nsf fee",
       "td bank", "rbc", "cibc", "bmo", "scotiabank", "desjardins",
       "tangerine", "simplii", "eq bank",
-      "wealthsimple", "questrade", "interactive brokers",
       "loan payment", "student loan", "line of credit",
-      "tfsa", "rrsp", "resp", "fhsa",
     ],
   },
   {
     name: "Insurance",
     icon: "shield",
     color: "#64748B",
-    sort_order: 12,
+    sort_order: 13,
     keywords: [
       "insurance", "manulife", "sun life", "great-west", "canada life",
       "intact", "aviva", "belair", "cooperators", "desjardins insurance",
@@ -299,7 +373,7 @@ const DEFAULT_CATEGORIES = [
     name: "Personal Care",
     icon: "scissors",
     color: "#D946EF",
-    sort_order: 13,
+    sort_order: 14,
     keywords: [
       "hair", "barber", "salon", "spa", "beauty", "nail",
       "sephora", "shoppers beauty", "bath & body",
@@ -310,7 +384,7 @@ const DEFAULT_CATEGORIES = [
     name: "Education",
     icon: "book-open",
     color: "#0EA5E9",
-    sort_order: 14,
+    sort_order: 15,
     keywords: [
       "tuition", "university", "college", "school",
       "textbook", "course", "udemy", "coursera", "linkedin learning",
@@ -321,7 +395,7 @@ const DEFAULT_CATEGORIES = [
     name: "Gifts & Donations",
     icon: "gift",
     color: "#E11D48",
-    sort_order: 15,
+    sort_order: 16,
     keywords: [
       "gift", "donation", "charity", "charitable",
       "united way", "red cross", "salvation army",
@@ -332,7 +406,7 @@ const DEFAULT_CATEGORIES = [
     name: "Pets",
     icon: "paw-print",
     color: "#B45309",
-    sort_order: 16,
+    sort_order: 17,
     keywords: [
       "vet", "veterinar", "pet", "petsmart", "pet valu", "global pet",
       "dog", "cat", "grooming",
@@ -342,7 +416,7 @@ const DEFAULT_CATEGORIES = [
     name: "Remittance",
     icon: "send",
     color: "#7C3AED",
-    sort_order: 17,
+    sort_order: 18,
     keywords: [
       "wise", "transferwise", "western union", "remitly", "xoom",
       "world remit", "moneygram", "ria money", "pangea",
@@ -353,7 +427,7 @@ const DEFAULT_CATEGORIES = [
     name: "Alcohol & Cannabis",
     icon: "wine",
     color: "#9333EA",
-    sort_order: 18,
+    sort_order: 19,
     keywords: [
       "lcbo", "saq", "bc liquor", "alberta gaming",
       "beer store", "wine rack", "wine",
@@ -364,7 +438,7 @@ const DEFAULT_CATEGORIES = [
     name: "Subscriptions",
     icon: "repeat",
     color: "#6366F1",
-    sort_order: 19,
+    sort_order: 20,
     keywords: [
       "subscription", "membership", "adobe", "microsoft 365", "google storage",
       "icloud", "dropbox", "notion", "canva",
@@ -375,7 +449,7 @@ const DEFAULT_CATEGORIES = [
     name: "Income",
     icon: "trending-up",
     color: "#22C55E",
-    sort_order: 20,
+    sort_order: 21,
     keywords: [
       "salary", "payroll", "direct deposit", "pay stub",
       "e-transfer received", "etransfer",
@@ -388,7 +462,7 @@ const DEFAULT_CATEGORIES = [
     name: "Transfers",
     icon: "arrow-left-right",
     color: "#94A3B8",
-    sort_order: 21,
+    sort_order: 22,
     keywords: [
       "transfer", "payment - thank you", "credit card payment",
       "e-transfer sent", "interac",
@@ -409,7 +483,9 @@ const DEFAULT_CATEGORIES = [
  * This runs automatically on first deploy — the app checks if the table
  * is empty and seeds it if so.
  *
- * Safe to call multiple times: it only seeds when the table has 0 categories.
+ * Creates parent categories first, then subcategories with correct parent_id
+ * references. Safe to call multiple times: it only seeds when the table has
+ * 0 categories.
  *
  * @returns {number} Number of categories created (0 if table was already populated)
  */
@@ -422,14 +498,90 @@ export async function seedCategories() {
     return 0;
   }
 
-  console.log(`Seeding ${DEFAULT_CATEGORIES.length} default categories...`);
+  let count = 0;
+  console.log(`Seeding ${DEFAULT_CATEGORIES.length} default categories with subcategories...`);
 
   for (const data of DEFAULT_CATEGORIES) {
-    await addCategory(data);
+    // Create the parent category (without subcategories field)
+    const { subcategories, ...parentData } = data;
+    const parent = await addCategory(parentData);
+    count++;
+
+    // Create subcategories with parent_id reference
+    if (subcategories && subcategories.length > 0) {
+      for (let i = 0; i < subcategories.length; i++) {
+        await addCategory({
+          ...subcategories[i],
+          parent_id: parent.category_id,
+          sort_order: data.sort_order * 100 + i + 1,
+        });
+        count++;
+      }
+    }
   }
 
-  console.log(`Successfully seeded ${DEFAULT_CATEGORIES.length} categories.`);
-  return DEFAULT_CATEGORIES.length;
+  console.log(`Successfully seeded ${count} categories (parents + subcategories).`);
+  return count;
+}
+
+/**
+ * Add subcategories to existing parent categories that don't have them yet.
+ * Use this on deployments that were seeded before subcategories were added.
+ *
+ * Matches parents by name and only creates subcategories that don't already exist.
+ *
+ * @returns {number} Number of subcategories added
+ */
+export async function seedSubcategories() {
+  const existing = await getAllCategories();
+  const existingNames = new Set(existing.map((c) => c.name));
+  const parentsByName = Object.fromEntries(
+    existing.filter((c) => !c.parent_id).map((c) => [c.name, c])
+  );
+
+  let count = 0;
+
+  for (const data of DEFAULT_CATEGORIES) {
+    if (!data.subcategories || data.subcategories.length === 0) continue;
+
+    const parent = parentsByName[data.name];
+    if (!parent) continue; // Parent doesn't exist — skip
+
+    for (let i = 0; i < data.subcategories.length; i++) {
+      const sub = data.subcategories[i];
+      if (existingNames.has(sub.name)) continue; // Already exists
+
+      await addCategory({
+        ...sub,
+        parent_id: parent.category_id,
+        sort_order: (data.sort_order || 999) * 100 + i + 1,
+      });
+      count++;
+    }
+  }
+
+  // Also add any new parent categories (like Investment) that don't exist yet
+  for (const data of DEFAULT_CATEGORIES) {
+    if (existingNames.has(data.name)) continue;
+
+    const { subcategories, ...parentData } = data;
+    const parent = await addCategory(parentData);
+    count++;
+
+    if (subcategories && subcategories.length > 0) {
+      for (let i = 0; i < subcategories.length; i++) {
+        await addCategory({
+          ...subcategories[i],
+          parent_id: parent.category_id,
+          sort_order: (data.sort_order || 999) * 100 + i + 1,
+        });
+        count++;
+      }
+    }
+  }
+
+  console.log(`Added ${count} new subcategories/categories.`);
+  return count;
 }
 
 /**

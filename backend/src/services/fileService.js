@@ -27,8 +27,11 @@ import {
   getFilesByUser,
   updateFileStatus,
   createTransactionsBatch,
+  getTransactionsByFileId,
+  deleteTransactionsBatch,
+  deleteFileRecord,
 } from "../infrastructure/dynamodb.js";
-import { generatePresignedUploadUrl, getObject } from "../infrastructure/s3.js";
+import { generatePresignedUploadUrl, getObject, deleteObject } from "../infrastructure/s3.js";
 import { parseCsv, parsePdf } from "./parserService.js";
 import { extractFromCsv, extractFromText } from "./extractionService.js";
 import { categorizeTransactions } from "../infrastructure/llm.js";
@@ -177,6 +180,50 @@ export async function processFile(fileId, userId) {
     await updateFileStatus(fileId, "FAILED");
     throw err;
   }
+}
+
+// =============================================================================
+// FILE DELETION
+// =============================================================================
+
+/**
+ * Delete a file and all its associated transactions.
+ *
+ * This is the reverse of processFile — it removes all transactions that were
+ * extracted from this file, deletes the file from S3, and removes the file
+ * record from DynamoDB.
+ *
+ * @param {string} fileId - The file record ID
+ * @param {string} userId - The authenticated user's ID (for ownership check)
+ * @returns {Object} { deleted_transactions: number }
+ */
+export async function deleteFile(fileId, userId) {
+  const file = await getFileById(fileId);
+  if (!file || file.user_id !== userId) {
+    const err = new Error("File not found");
+    err.status = 404;
+    throw err;
+  }
+
+  // Find and delete all transactions from this file
+  const transactions = await getTransactionsByFileId(userId, fileId);
+  if (transactions.length > 0) {
+    const ids = transactions.map((t) => t.transaction_id);
+    await deleteTransactionsBatch(ids);
+  }
+
+  // Delete the file from S3 (non-critical — don't fail if S3 delete errors)
+  try {
+    await deleteObject(file.s3_key);
+  } catch (err) {
+    console.warn(`Failed to delete S3 object ${file.s3_key}:`, err.message);
+  }
+
+  // Delete the file record from DynamoDB
+  await deleteFileRecord(fileId);
+
+  console.log(`Deleted file ${fileId} (${file.original_filename}) and ${transactions.length} transactions`);
+  return { deleted_transactions: transactions.length };
 }
 
 // =============================================================================

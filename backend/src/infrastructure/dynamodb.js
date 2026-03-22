@@ -262,6 +262,61 @@ export async function getFilesByUser(userId) {
 }
 
 /**
+ * Get all transactions associated with a specific file.
+ * Used when deleting a file to also remove its transactions.
+ * Queries by user_id (via UserDateIndex) and filters by file_id.
+ */
+export async function getTransactionsByFileId(userId, fileId) {
+  const items = [];
+  let lastKey;
+  do {
+    const params = {
+      TableName: config.dynamodb.transactionsTable,
+      IndexName: "UserDateIndex",
+      KeyConditionExpression: "user_id = :uid",
+      FilterExpression: "file_id = :fid",
+      ExpressionAttributeValues: { ":uid": userId, ":fid": fileId },
+    };
+    if (lastKey) params.ExclusiveStartKey = lastKey;
+    const result = await docClient.send(new QueryCommand(params));
+    items.push(...(result.Items || []));
+    lastKey = result.LastEvaluatedKey;
+  } while (lastKey);
+  return items;
+}
+
+/**
+ * Batch-delete transactions by their IDs.
+ * DynamoDB limits batch writes to 25 items, so we chunk accordingly.
+ */
+export async function deleteTransactionsBatch(transactionIds) {
+  const BATCH_SIZE = 25;
+  for (let i = 0; i < transactionIds.length; i += BATCH_SIZE) {
+    const batch = transactionIds.slice(i, i + BATCH_SIZE);
+    await docClient.send(new BatchWriteCommand({
+      RequestItems: {
+        [config.dynamodb.transactionsTable]: batch.map((id) => ({
+          DeleteRequest: { Key: { transaction_id: id } },
+        })),
+      },
+    }));
+  }
+}
+
+/**
+ * Delete a file record from DynamoDB.
+ * Returns the deleted item so the caller can confirm what was removed.
+ */
+export async function deleteFileRecord(fileId) {
+  const result = await docClient.send(new DeleteCommand({
+    TableName: config.dynamodb.filesTable,
+    Key: { file_id: fileId },
+    ReturnValues: "ALL_OLD",
+  }));
+  return result.Attributes || null;
+}
+
+/**
  * Update a file's processing status and transaction count.
  * Called during the processing pipeline:
  *   PENDING → PROCESSING → COMPLETED (with count) or FAILED

@@ -46,3 +46,10 @@ export async function listFiles(): Promise<FileRecord[]> {
   const { data } = await apiClient.get<FileRecord[]>("/files");
   return data;
 }
+
+export async function deleteFile(fileId: string): Promise<{ deleted_transactions: number }> {
+  const { data } = await apiClient.delete<{ deleted_transactions: number }>(
+    `/files/${fileId}`
+  );
+  return data;
+}

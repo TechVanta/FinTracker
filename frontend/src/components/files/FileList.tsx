@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { listFiles } from "@/api/files";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { listFiles, deleteFile } from "@/api/files";
 import Card from "@/components/ui/Card";
 import Spinner from "@/components/ui/Spinner";
 
@@ -11,9 +12,22 @@ const statusColors: Record<string, string> = {
 };
 
 export default function FileList() {
+  const queryClient = useQueryClient();
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+
   const { data: files, isLoading } = useQuery({
     queryKey: ["files"],
     queryFn: listFiles,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteFile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["files"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      setConfirmId(null);
+    },
   });
 
   if (isLoading) {
@@ -45,6 +59,7 @@ export default function FileList() {
               <th className="pb-2 font-medium">Status</th>
               <th className="pb-2 font-medium">Transactions</th>
               <th className="pb-2 font-medium">Date</th>
+              <th className="pb-2 font-medium"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -69,11 +84,46 @@ export default function FileList() {
                 <td className="py-3 text-gray-600">
                   {new Date(file.upload_date).toLocaleDateString()}
                 </td>
+                <td className="py-3 text-right">
+                  {confirmId === file.file_id ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="text-xs text-red-600 font-medium">
+                        Delete {file.transaction_count} transactions?
+                      </span>
+                      <button
+                        onClick={() => deleteMutation.mutate(file.file_id)}
+                        disabled={deleteMutation.isPending}
+                        className="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {deleteMutation.isPending ? "Deleting..." : "Confirm"}
+                      </button>
+                      <button
+                        onClick={() => setConfirmId(null)}
+                        disabled={deleteMutation.isPending}
+                        className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
+                      >
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmId(file.file_id)}
+                      className="px-2 py-1 text-xs font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {deleteMutation.isError && (
+        <p className="mt-2 text-sm text-red-600">
+          Failed to delete file. Please try again.
+        </p>
+      )}
     </Card>
   );
 }
