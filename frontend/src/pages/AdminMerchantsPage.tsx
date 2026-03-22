@@ -107,13 +107,15 @@ export default function AdminMerchantsPage() {
   // --- Build a category lookup for displaying names ---
   const categoryMap = useMemo(() => {
     const map = new Map<string, string>();
-    categories.forEach((c) => map.set(c.category_id, c.name));
+    if (Array.isArray(categories)) {
+      categories.forEach((c) => map.set(c.category_id, c.name));
+    }
     return map;
   }, [categories]);
 
   // --- Filter + paginate ---
   const filtered = useMemo(() => {
-    if (!merchants) return [];
+    if (!Array.isArray(merchants)) return [];
     if (!search.trim()) return merchants;
     const q = search.toLowerCase();
     return merchants.filter((m) =>
