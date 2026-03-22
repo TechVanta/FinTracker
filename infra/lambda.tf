@@ -24,7 +24,7 @@ resource "aws_lambda_function" "api" {
       DYNAMODB_FILES_TABLE           = aws_dynamodb_table.files.name
       S3_UPLOADS_BUCKET              = aws_s3_bucket.uploads.id
       JWT_SECRET                     = random_password.jwt_secret.result
-      CORS_ORIGINS                   = "https://${aws_cloudfront_distribution.frontend.domain_name},http://localhost:5173"
+      CORS_ORIGINS                   = "*"
     }
   }
 
@@ -39,10 +39,7 @@ resource "aws_apigatewayv2_api" "api" {
   protocol_type = "HTTP"
 
   cors_configuration {
-    allow_origins = [
-      "http://localhost:5173",
-      "https://${aws_cloudfront_distribution.frontend.domain_name}"
-    ]
+    allow_origins = ["*"]
     allow_methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
     allow_headers = ["Content-Type", "Authorization"]
     max_age       = 3600
